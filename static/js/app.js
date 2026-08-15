@@ -1,0 +1,205 @@
+/* ─── Climate Monitor SPA Router ──────────────────────────── */
+let weatherData = null, aqiData = null, riverData = null, alertsData = null, summaryData = null;
+// Expose to window for sections loaded lazily
+window.weatherData = null; window.aqiData = null; window.riverData = null; window.alertsData = null; window.summaryData = null;
+let dataLoaded = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Theme toggle
+    const savedTheme = localStorage.getItem('climate-theme') || 'dark';
+    if (savedTheme === 'light') document.documentElement.classList.add('light');
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        document.documentElement.classList.toggle('light');
+        localStorage.setItem('climate-theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+        // Update all existing maps with new tile style
+        updateMapTilesForTheme();
+    });
+
+    // Nav
+    $$('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            loadSection(btn.dataset.s);
+            // Close mobile sidebar after clicking
+            if (window.innerWidth <= 900) {
+                document.querySelector('.sidebar')?.classList.remove('open');
+                const overlay = document.getElementById('sidebar-overlay');
+                if (overlay) overlay.style.display = 'none';
+            }
+        });
+    });
+
+    // Load data then render default section
+    loadAllData().then(() => {
+        dataLoaded = true;
+        // Preload overview script first, then load section
+        loadSectionScript('overview').then(() => {
+            const el = document.getElementById('sec-overview');
+            const fn = window['render_overview'];
+            if (fn && el) fn(el);
+            $$('.nav-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.querySelector('[data-s="overview"]');
+            if (btn) btn.classList.add('active');
+        });
+        // Preload popular sections in background after 2s
+        setTimeout(() => {
+            ['command-center', 'temperature', 'rivers'].forEach(id => loadSectionScript(id));
+        }, 2000);
+    });
+});
+
+async function loadAllData() {
+    const [w, a, r, al, s] = await Promise.all([
+        api('/api/weather/all'),
+        api('/api/aqi/all'),
+        api('/api/rivers'),
+        api('/api/alerts'),
+        api('/api/summary')
+    ]);
+    weatherData = w || {}; aqiData = a || {};
+    riverData = r || {}; alertsData = al || [];
+    summaryData = s || {};
+    // Also expose on window for lazily-loaded sections
+    window.weatherData = weatherData; window.aqiData = aqiData;
+    window.riverData = riverData; window.alertsData = alertsData; window.summaryData = summaryData;
+    renderAlerts();
+}
+
+function renderAlerts() {
+    const dot = document.querySelector('.alert-dot');
+    if (dot && alertsData.length) {
+        dot.style.display = 'block';
+        dot.title = alertsData.length + ' active alerts';
+    } else if (dot) { dot.style.display = 'none'; }
+}
+
+// Update map tiles when theme changes
+function updateMapTilesForTheme() {
+    const isLight = document.documentElement.classList.contains('light');
+    const tileStyle = isLight ? 'light' : 'dark';
+    
+    document.querySelectorAll('.leaflet-container').forEach(container => {
+        if (container._floodTileLayer && container._floodTileStyle !== undefined) {
+            // Remove old tiles
+            container.removeLayer(container._floodTileLayer);
+            
+            // Add new tiles
+            const subdomains = container._floodTileStyle === 'satellite' ? [] : 
+                              (container._floodTileStyle === 'terrain' ? 'abc' : 'abcd');
+            const attribution = container._floodTileStyle === 'satellite' ? '© Esri' : 
+                               (container._floodTileStyle === 'terrain' ? '© OpenTopoMap' : '© CartoDB');
+            
+            container._floodTileLayer = L.tileLayer(FLOOD_TILE_URLS[tileStyle], {
+                maxZoom: 18,
+                subdomains: subdomains,
+                attribution: attribution
+            }).addTo(container);
+            
+            container._floodTileStyle = tileStyle;
+            
+            // Update basemap button text
+            const btn = container.querySelector('.basemap-btn');
+            if (btn) btn.textContent = FLOOD_TILE_NAMES[tileStyle];
+        }
+    });
+}
+
+/* ─── Lazy-load section JS on demand ──────────────────────────── */
+const _loadedSections = new Set();
+
+function loadSectionScript(id) {
+    return new Promise((resolve, reject) => {
+        if (_loadedSections.has(id)) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = `/static/js/sections/${id}.js?v=60`;
+        script.onload = () => { _loadedSections.add(id); resolve(); };
+        script.onerror = () => reject(new Error(`Failed to load ${id}.js`));
+        document.body.appendChild(script);
+    });
+}
+
+function loadSection(id) {
+    $$('.nav-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`[data-s="${id}"]`);
+    if (btn) btn.classList.add('active');
+    const mc = document.getElementById('main-content');
+    mc.innerHTML = `<div class="section active" id="sec-${id}"><div class="loading">Loading…</div></div>`;
+    const el = document.getElementById(`sec-${id}`);
+
+    loadSectionScript(id).then(() => {
+        const fn = window['render_' + id.replace(/-/g, '_')];
+        if (fn) fn(el); else el.innerHTML = '<div class="card"><h3>Section coming soon</h3></div>';
+    }).catch(() => {
+        el.innerHTML = '<div class="card"><h3>Section unavailable</h3></div>';
+    });
+}
+
+// ═══ Multi-language Support ════════════════════════════════
+let currentLang = localStorage.getItem('climate-lang') || 'en';
+const translations = {
+    en: { overview:'Overview', command_center:'Command Center', temperature:'Temperature & Heatwaves', air_quality:'Air Quality (AQI)', precipitation:'Precipitation', drought:'Drought Monitor', wind:'Wind Patterns', uv:'UV Index', humidity:'Humidity', rivers:'River Discharge', flood_risk:'Flood Risk', disaster:'Disaster Center', climate_trends:'Climate Trends', satellite:'Satellite Watch', agriculture:'Agriculture', ghg:'Greenhouse Gases', geospatial:'Geospatial / GIS', hazard_risk:'Hazard & Risk', socioeconomic:'Socio-Economic', ai_analyst:'AI Analyst', weather_portal:'Weather Portal', city_weather:'City Weather', early_warning:'Early Warning', resilience:'Resilience Center', interactive_map:'Interactive Map', spatial_analysis:'Spatial Analysis', data_export:'Data Export', predictive:'Predictive Analytics', history:'Historical Data', data_ingestion:'Data Ingestion', data_processing:'Data Processing', mapping_viz:'Mapping & Viz', dashboard_sys:'Dashboard System', alert_notif:'Alert & Notification', user_mgmt:'User Management', reports:'Report Generation', data_sources:'Data Sources', districts_monitored:'Districts Monitored', hottest_today:'Hottest Today', most_rainfall:'Most Rainfall', worst_aqi:'Worst AQI', peak_river:'Peak River Flow', active_alerts:'Active Alerts', login:'Login', logout:'Logout', language:'Language' },
+    ur: { overview:' Overview', command_center:' ', temperature:' ', air_quality:' (AQI)', precipitation:' ', drought:' ', wind:' ', uv:' UV ', humidity:' ', rivers:' ', flood_risk:' ', disaster:' ', climate_trends:' ', satellite:' ', agriculture:' ', ghg:' ', geospatial:' / GIS', hazard_risk:'  ', socioeconomic:' ', ai_analyst:' ', weather_portal:' ', city_weather:' ', early_warning:' ', resilience:' ', interactive_map:' ', spatial_analysis:' ', data_export:' ', predictive:' ', history:' ', data_ingestion:' ', data_processing:' ', mapping_viz:'  ', dashboard_sys:' ', alert_notif:'  ', user_mgmt:' ', reports:' ', data_sources:' ', districts_monitored:' ', hottest_today:' ', most_rainfall:' ', worst_aqi:'AQI ', peak_river:' ', active_alerts:' ', login:' ', logout:' ', language:' ' }
+};
+
+function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'ur' : 'en';
+    localStorage.setItem('climate-lang', currentLang);
+    document.documentElement.dir = currentLang === 'ur' ? 'rtl' : 'ltr';
+    document.getElementById('lang-toggle').textContent = currentLang === 'en' ? '🌐 EN' : '🌐 اردو';
+    applyTranslations();
+}
+
+// ═══ Mobile Sidebar Toggle ════════════════════════════════
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.toggle('open');
+    if (overlay) overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+}
+
+function applyTranslations() {
+    const t = translations[currentLang] || translations.en;
+    $$('.nav-btn').forEach(btn => {
+        const key = btn.dataset.s?.replace(/-/g, '_');
+        if (key && t[key]) {
+            const icon = btn.querySelector('.nav-icon')?.textContent || '';
+            btn.innerHTML = `<span class="nav-icon">${icon}</span>${t[key]}`;
+        }
+    });
+}
+
+// ═══ Auth System ═══════════════════════════════════════════
+let authToken = localStorage.getItem('climate-token') || null;
+let currentUser = null;
+
+async function doLogin() {
+    const user = document.getElementById('auth-user')?.value;
+    const pass = document.getElementById('auth-pass')?.value;
+    try {
+        const res = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:user, password:pass}) });
+        const data = await res.json();
+        if (data.token) {
+            authToken = data.token;
+            currentUser = data.user;
+            localStorage.setItem('climate-token', authToken);
+            document.getElementById('auth-modal').style.display = 'none';
+            alert('Welcome, ' + data.user.name + '! Role: ' + data.user.role);
+        } else {
+            alert('Invalid credentials');
+        }
+    } catch(e) { alert('Login error: ' + e.message); }
+}
+
+function doLogout() {
+    authToken = null; currentUser = null;
+    localStorage.removeItem('climate-token');
+}
+
+// Auto-save snapshot daily
+async function autoSaveSnapshot() {
+    const lastSave = localStorage.getItem('climate-last-save');
+    const today = new Date().toDateString();
+    if (lastSave !== today) {
+        try { await fetch('/api/history/save', {method:'POST'}); localStorage.setItem('climate-last-save', today); } catch(e) {}
+    }
+}
+autoSaveSnapshot();

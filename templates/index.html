@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Climate Monitor — Pakistan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="/static/css/style.css?v=43">
+</head>
+<body>
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <span class="logo">🌍</span>
+        <div style="flex:1"><div class="brand">Climate Monitor · Pakistan</div><div class="subtitle">Full Climate Monitoring & Mapping System</div></div>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode">
+            <span class="theme-icon-dark">☀</span>
+            <span class="theme-icon-light">🌙</span>
+        </button>
+    </div>
+    <div class="nav-items" id="nav-items">
+        <div class="nav-section-label">Dashboard</div>
+        <button class="nav-btn active" data-s="overview"><span class="nav-icon">◎</span>Overview</button>
+        <button class="nav-btn" data-s="command-center"><span class="nav-icon">🛰</span>Command Center</button>
+        <div class="nav-section-label">Climate Parameters</div>
+        <button class="nav-btn" data-s="temperature"><span class="nav-icon">🌡</span>Temperature & Heatwaves</button>
+        <button class="nav-btn" data-s="air-quality"><span class="nav-icon">💨</span>Air Quality (AQI)</button>
+        <button class="nav-btn" data-s="precipitation"><span class="nav-icon">🌧</span>Precipitation</button>
+        <button class="nav-btn" data-s="drought"><span class="nav-icon">🏜</span>Drought Monitor</button>
+        <button class="nav-btn" data-s="wind"><span class="nav-icon">🌬</span>Wind Patterns</button>
+        <button class="nav-btn" data-s="uv"><span class="nav-icon">☀</span>UV Index</button>
+        <button class="nav-btn" data-s="humidity"><span class="nav-icon">💧</span>Humidity</button>
+        <div class="nav-section-label">Water & Hazards</div>
+        <button class="nav-btn" data-s="rivers"><span class="nav-icon">🌊</span>River Discharge</button>
+        <button class="nav-btn" data-s="flood-risk"><span class="nav-icon">⚠</span>Flood Risk</button>
+        <button class="nav-btn" data-s="disaster"><span class="nav-icon">🌋</span>Disaster Center</button>
+        <div class="nav-section-label">Analysis</div>
+        <button class="nav-btn" data-s="climate-trends"><span class="nav-icon">📈</span>Climate Trends</button>
+        <button class="nav-btn" data-s="satellite"><span class="nav-icon">🛰</span>Satellite Watch</button>
+        <button class="nav-btn" data-s="agriculture"><span class="nav-icon">🌾</span>Agriculture</button>
+        <button class="nav-btn" data-s="ghg"><span class="nav-icon">🏭</span>Greenhouse Gases</button>
+        <button class="nav-btn" data-s="geospatial"><span class="nav-icon">🗺</span>Geospatial / GIS</button>
+        <button class="nav-btn" data-s="hazard-risk"><span class="nav-icon">⚠</span>Hazard & Risk</button>
+        <button class="nav-btn" data-s="socioeconomic"><span class="nav-icon">👥</span>Socio-Economic</button>
+        <button class="nav-btn" data-s="ai-analyst"><span class="nav-icon">✨</span>AI Analyst</button>
+        <div class="nav-section-label">Operations</div>
+        <button class="nav-btn" data-s="weather-portal"><span class="nav-icon">🌦</span>Weather Portal</button>
+        <button class="nav-btn" data-s="city-weather"><span class="nav-icon">🏙</span>City Weather</button>
+        <button class="nav-btn" data-s="early-warning"><span class="nav-icon">🚨</span>Early Warning</button>
+        <button class="nav-btn" data-s="resilience"><span class="nav-icon">🛡</span>Resilience Center</button>
+        <div class="nav-section-label">System Modules</div>
+        <button class="nav-btn" data-s="interactive-map"><span class="nav-icon">🗺</span>Interactive Map</button>
+        <button class="nav-btn" data-s="spatial-analysis"><span class="nav-icon">📐</span>Spatial Analysis</button>
+        <button class="nav-btn" data-s="data-export"><span class="nav-icon">📤</span>Data Export</button>
+        <button class="nav-btn" data-s="predictive"><span class="nav-icon">🤖</span>Predictive Analytics</button>
+        <button class="nav-btn" data-s="history"><span class="nav-icon">📜</span>Historical Data</button>
+        <button class="nav-btn" data-s="data-ingestion"><span class="nav-icon">📥</span>Data Ingestion</button>
+        <button class="nav-btn" data-s="data-processing"><span class="nav-icon">⚙</span>Data Processing</button>
+        <button class="nav-btn" data-s="mapping-viz"><span class="nav-icon">🗺</span>Mapping & Viz</button>
+        <button class="nav-btn" data-s="dashboard-sys"><span class="nav-icon">📊</span>Dashboard System</button>
+        <button class="nav-btn" data-s="alert-notif"><span class="nav-icon">🔔</span>Alert & Notification</button>
+        <button class="nav-btn" data-s="user-mgmt"><span class="nav-icon">👤</span>User Management</button>
+        <button class="nav-btn" data-s="reports"><span class="nav-icon">📄</span>Report Generation</button>
+        <div class="nav-section-label">Info</div>
+        <button class="nav-btn" data-s="data-sources"><span class="nav-icon">🗄</span>Data Sources</button>
+    </div>
+</nav>
+
+<div class="main-content" id="main-content">
+    <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
+</div>
+
+<div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
+
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+<!-- Language Toggle -->
+<button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()">🌐 EN</button>
+
+<!-- Auth Modal -->
+<div id="auth-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;width:320px;box-shadow:var(--shadow-lg)">
+        <h3 style="margin-bottom:16px;text-align:center">🔐 Login</h3>
+        <input id="auth-user" type="text" placeholder="Username" style="width:100%;padding:10px;margin-bottom:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
+        <input id="auth-pass" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
+        <button onclick="doLogin()" style="width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">Login</button>
+        <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--text-muted)">admin/admin123 · analyst/analyst123</div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="/static/js/utils.js?v=44"></script>
+<script src="/static/js/timeseries.js?v=44"></script>
+<script src="/static/js/flood-replay-map.js?v=44"></script>
+<script src="/static/js/maps.js?v=44"></script>
+<script src="/static/js/charts.js?v=44"></script>
+<script src="/static/js/app.js?v=60"></script>
+</body>
+</html>

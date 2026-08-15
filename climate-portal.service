@@ -1,0 +1,15 @@
+[Unit]
+Description=Climate Monitoring System Pakistan
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/workspace/climate_portal
+ExecStart=/root/workspace/climate_portal/venv/bin/python3 app.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

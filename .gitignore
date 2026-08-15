@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.cache
+.env
+*.log
+data/weather_cache.json
+data/aqi_cache.json
+data/river_cache.json
+data/ghg_cache.json
