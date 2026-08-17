@@ -177,8 +177,10 @@ function loadSection(id) {
     loadSectionScript(id).then(() => {
         const fn = window['render_' + id.replace(/-/g, '_')];
         if (fn) fn(el); else el.innerHTML = '<div class="card"><h3>Section coming soon</h3></div>';
+        if(window.lucide) lucide.createIcons();
     }).catch(() => {
         el.innerHTML = '<div class="card"><h3>Section unavailable</h3></div>';
+        if(window.lucide) lucide.createIcons();
     });
 }
 
@@ -193,7 +195,8 @@ function toggleLanguage() {
     currentLang = currentLang === 'en' ? 'ur' : 'en';
     localStorage.setItem('climate-lang', currentLang);
     document.documentElement.dir = currentLang === 'ur' ? 'rtl' : 'ltr';
-    document.getElementById('lang-toggle').textContent = currentLang === 'en' ? '🌐 EN' : '🌐 اردو';
+    document.getElementById('lang-toggle').innerHTML = currentLang === 'en' ? '<i data-lucide="globe"></i> EN' : '<i data-lucide="globe"></i> اردو';
+    if(window.lucide) lucide.createIcons();
     applyTranslations();
 }
 
@@ -210,10 +213,11 @@ function applyTranslations() {
     $$('.nav-btn').forEach(btn => {
         const key = btn.dataset.s?.replace(/-/g, '_');
         if (key && t[key]) {
-            const icon = btn.querySelector('.nav-icon')?.textContent || '';
+            const icon = btn.querySelector('.nav-icon')?.innerHTML || '';
             btn.innerHTML = `<span class="nav-icon">${icon}</span>${t[key]}`;
         }
     });
+    if(window.lucide) lucide.createIcons();
 }
 
 // ═══ Auth System ═══════════════════════════════════════════

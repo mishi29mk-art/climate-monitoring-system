@@ -4,72 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🌍 Climate Monitor — Pakistan</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=50">
+    <link rel="stylesheet" href="/static/css/style.css?v=51">
 </head>
 <body>
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <span class="logo">🌍</span>
+        <span class="logo"><i data-lucide="globe"></i></span>
         <div style="flex:1"><div class="brand">Climate Monitor · Pakistan</div><div class="subtitle">Full Climate Monitoring & Mapping System</div></div>
         <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode">
-            <span class="theme-icon-dark">☀</span>
-            <span class="theme-icon-light">🌙</span>
+            <span class="theme-icon-dark"><i data-lucide="sun"></i></span>
+            <span class="theme-icon-light"><i data-lucide="moon"></i></span>
         </button>
     </div>
     <div class="district-search-wrap">
-        <input type="text" id="district-search" class="district-search-input" placeholder="🔍 Search sections & districts…" data-i18n-placeholder-en="🔍 Search sections & districts…" data-i18n-placeholder-ur="🔍 sections اور districts تلاش کریں…" autocomplete="off">
+        <input type="text" id="district-search" class="district-search-input" placeholder="Search sections & districts…" data-i18n-placeholder-en="Search sections & districts…" data-i18n-placeholder-ur="sections اور districts تلاش کریں…" autocomplete="off">
         <div id="district-search-dropdown" class="district-search-dropdown"></div>
     </div>
     <div class="nav-items" id="nav-items">
         <div class="nav-section-label">Dashboard</div>
-        <button class="nav-btn active" data-s="overview" data-i18n="Overview" data-i18n-en="◎Overview"><span class="nav-icon">◎</span>Overview</button>
-        <button class="nav-btn" data-s="command-center" data-i18n="Command Center" data-i18n-en="🛰Command Center"><span class="nav-icon">🛰</span>Command Center</button>
+        <button class="nav-btn active" data-s="overview" data-i18n="Overview" data-i18n-en="◎Overview"><span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>Overview</button>
+        <button class="nav-btn" data-s="command-center" data-i18n="Command Center" data-i18n-en="🛰Command Center"><span class="nav-icon"><i data-lucide="radar"></i></span>Command Center</button>
         <div class="nav-section-label">Climate Parameters</div>
-        <button class="nav-btn" data-s="temperature" data-i18n="Temperature & Heatwaves" data-i18n-en="🌡Temperature & Heatwaves"><span class="nav-icon">🌡</span>Temperature & Heatwaves</button>
-        <button class="nav-btn" data-s="air-quality" data-i18n="Air Quality (AQI)" data-i18n-en="💨Air Quality (AQI)"><span class="nav-icon">💨</span>Air Quality (AQI)</button>
-        <button class="nav-btn" data-s="precipitation" data-i18n="Precipitation" data-i18n-en="🌧Precipitation"><span class="nav-icon">🌧</span>Precipitation</button>
-        <button class="nav-btn" data-s="drought" data-i18n="Drought Monitor" data-i18n-en="🏜Drought Monitor"><span class="nav-icon">🏜</span>Drought Monitor</button>
-        <button class="nav-btn" data-s="wind" data-i18n="Wind Patterns" data-i18n-en="🌬Wind Patterns"><span class="nav-icon">🌬</span>Wind Patterns</button>
-        <button class="nav-btn" data-s="uv" data-i18n="UV Index" data-i18n-en="☀UV Index"><span class="nav-icon">☀</span>UV Index</button>
-        <button class="nav-btn" data-s="humidity" data-i18n="Humidity" data-i18n-en="💧Humidity"><span class="nav-icon">💧</span>Humidity</button>
+        <button class="nav-btn" data-s="temperature" data-i18n="Temperature & Heatwaves" data-i18n-en="🌡Temperature & Heatwaves"><span class="nav-icon"><i data-lucide="thermometer"></i></span>Temperature & Heatwaves</button>
+        <button class="nav-btn" data-s="air-quality" data-i18n="Air Quality (AQI)" data-i18n-en="💨Air Quality (AQI)"><span class="nav-icon"><i data-lucide="wind"></i></span>Air Quality (AQI)</button>
+        <button class="nav-btn" data-s="precipitation" data-i18n="Precipitation" data-i18n-en="🌧Precipitation"><span class="nav-icon"><i data-lucide="cloud-rain"></i></span>Precipitation</button>
+        <button class="nav-btn" data-s="drought" data-i18n="Drought Monitor" data-i18n-en="🏜Drought Monitor"><span class="nav-icon"><i data-lucide="sun"></i></span>Drought Monitor</button>
+        <button class="nav-btn" data-s="wind" data-i18n="Wind Patterns" data-i18n-en="🌬Wind Patterns"><span class="nav-icon"><i data-lucide="cloud-wind"></i></span>Wind Patterns</button>
+        <button class="nav-btn" data-s="uv" data-i18n="UV Index" data-i18n-en="☀UV Index"><span class="nav-icon"><i data-lucide="sun-dim"></i></span>UV Index</button>
+        <button class="nav-btn" data-s="humidity" data-i18n="Humidity" data-i18n-en="💧Humidity"><span class="nav-icon"><i data-lucide="droplets"></i></span>Humidity</button>
         <div class="nav-section-label">Water & Hazards</div>
-        <button class="nav-btn" data-s="rivers" data-i18n="River Discharge" data-i18n-en="🌊River Discharge"><span class="nav-icon">🌊</span>River Discharge</button>
-        <button class="nav-btn" data-s="flood-risk" data-i18n="Flood Risk" data-i18n-en="⚠Flood Risk"><span class="nav-icon">⚠</span>Flood Risk</button>
-        <button class="nav-btn" data-s="disaster" data-i18n="Disaster Center" data-i18n-en="🌋Disaster Center"><span class="nav-icon">🌋</span>Disaster Center</button>
+        <button class="nav-btn" data-s="rivers" data-i18n="River Discharge" data-i18n-en="🌊River Discharge"><span class="nav-icon"><i data-lucide="waves"></i></span>River Discharge</button>
+        <button class="nav-btn" data-s="flood-risk" data-i18n="Flood Risk" data-i18n-en="⚠Flood Risk"><span class="nav-icon"><i data-lucide="alert-triangle"></i></span>Flood Risk</button>
+        <button class="nav-btn" data-s="disaster" data-i18n="Disaster Center" data-i18n-en="🌋Disaster Center"><span class="nav-icon"><i data-lucide="flame"></i></span>Disaster Center</button>
         <div class="nav-section-label">Analysis</div>
-        <button class="nav-btn" data-s="climate-trends" data-i18n="Climate Trends" data-i18n-en="📈Climate Trends"><span class="nav-icon">📈</span>Climate Trends</button>
-        <button class="nav-btn" data-s="compare" data-i18n="Compare Districts" data-i18n-en="⚖Compare Districts"><span class="nav-icon">⚖</span>Compare Districts</button>
-        <button class="nav-btn" data-s="satellite" data-i18n="Satellite Watch" data-i18n-en="🛰Satellite Watch"><span class="nav-icon">🛰</span>Satellite Watch</button>
-        <button class="nav-btn" data-s="agriculture" data-i18n="Agriculture" data-i18n-en="🌾Agriculture"><span class="nav-icon">🌾</span>Agriculture</button>
-        <button class="nav-btn" data-s="ghg" data-i18n="Greenhouse Gases" data-i18n-en="🏭Greenhouse Gases"><span class="nav-icon">🏭</span>Greenhouse Gases</button>
-        <button class="nav-btn" data-s="geospatial" data-i18n="Geospatial / GIS" data-i18n-en="🗺Geospatial / GIS"><span class="nav-icon">🗺</span>Geospatial / GIS</button>
-        <button class="nav-btn" data-s="hazard-risk" data-i18n="Hazard & Risk" data-i18n-en="⚠Hazard & Risk"><span class="nav-icon">⚠</span>Hazard & Risk</button>
-        <button class="nav-btn" data-s="socioeconomic" data-i18n="Socio-Economic" data-i18n-en="👥Socio-Economic"><span class="nav-icon">👥</span>Socio-Economic</button>
-        <button class="nav-btn" data-s="ai-analyst" data-i18n="AI Analyst" data-i18n-en="✨AI Analyst"><span class="nav-icon">✨</span>AI Analyst</button>
+        <button class="nav-btn" data-s="climate-trends" data-i18n="Climate Trends" data-i18n-en="📈Climate Trends"><span class="nav-icon"><i data-lucide="trending-up"></i></span>Climate Trends</button>
+        <button class="nav-btn" data-s="compare" data-i18n="Compare Districts" data-i18n-en="⚖Compare Districts"><span class="nav-icon"><i data-lucide="scale"></i></span>Compare Districts</button>
+        <button class="nav-btn" data-s="satellite" data-i18n="Satellite Watch" data-i18n-en="🛰Satellite Watch"><span class="nav-icon"><i data-lucide="satellite"></i></span>Satellite Watch</button>
+        <button class="nav-btn" data-s="agriculture" data-i18n="Agriculture" data-i18n-en="🌾Agriculture"><span class="nav-icon"><i data-lucide="sprout"></i></span>Agriculture</button>
+        <button class="nav-btn" data-s="ghg" data-i18n="Greenhouse Gases" data-i18n-en="🏭Greenhouse Gases"><span class="nav-icon"><i data-lucide="factory"></i></span>Greenhouse Gases</button>
+        <button class="nav-btn" data-s="geospatial" data-i18n="Geospatial / GIS" data-i18n-en="🗺Geospatial / GIS"><span class="nav-icon"><i data-lucide="map"></i></span>Geospatial / GIS</button>
+        <button class="nav-btn" data-s="hazard-risk" data-i18n="Hazard & Risk" data-i18n-en="⚠Hazard & Risk"><span class="nav-icon"><i data-lucide="shield-alert"></i></span>Hazard & Risk</button>
+        <button class="nav-btn" data-s="socioeconomic" data-i18n="Socio-Economic" data-i18n-en="👥Socio-Economic"><span class="nav-icon"><i data-lucide="users"></i></span>Socio-Economic</button>
+        <button class="nav-btn" data-s="ai-analyst" data-i18n="AI Analyst" data-i18n-en="✨AI Analyst"><span class="nav-icon"><i data-lucide="sparkles"></i></span>AI Analyst</button>
         <div class="nav-section-label">Operations</div>
-        <button class="nav-btn" data-s="weather-portal" data-i18n="Weather Portal" data-i18n-en="🌦Weather Portal"><span class="nav-icon">🌦</span>Weather Portal</button>
-        <button class="nav-btn" data-s="city-weather" data-i18n="City Weather" data-i18n-en="🏙City Weather"><span class="nav-icon">🏙</span>City Weather</button>
-        <button class="nav-btn" data-s="early-warning" data-i18n="Early Warning" data-i18n-en="🚨Early Warning"><span class="nav-icon">🚨</span>Early Warning</button>
-        <button class="nav-btn" data-s="resilience" data-i18n="Resilience Center" data-i18n-en="🛡Resilience Center"><span class="nav-icon">🛡</span>Resilience Center</button>
+        <button class="nav-btn" data-s="weather-portal" data-i18n="Weather Portal" data-i18n-en="🌦Weather Portal"><span class="nav-icon"><i data-lucide="cloud-sun"></i></span>Weather Portal</button>
+        <button class="nav-btn" data-s="city-weather" data-i18n="City Weather" data-i18n-en="🏙City Weather"><span class="nav-icon"><i data-lucide="building-2"></i></span>City Weather</button>
+        <button class="nav-btn" data-s="early-warning" data-i18n="Early Warning" data-i18n-en="🚨Early Warning"><span class="nav-icon"><i data-lucide="siren"></i></span>Early Warning</button>
+        <button class="nav-btn" data-s="resilience" data-i18n="Resilience Center" data-i18n-en="🛡Resilience Center"><span class="nav-icon"><i data-lucide="shield-check"></i></span>Resilience Center</button>
         <div class="nav-section-label">System Modules</div>
-        <button class="nav-btn" data-s="interactive-map" data-i18n="Interactive Map" data-i18n-en="🗺Interactive Map"><span class="nav-icon">🗺</span>Interactive Map</button>
-        <button class="nav-btn" data-s="spatial-analysis" data-i18n="Spatial Analysis" data-i18n-en="📐Spatial Analysis"><span class="nav-icon">📐</span>Spatial Analysis</button>
-        <button class="nav-btn" data-s="data-export" data-i18n="Data Export" data-i18n-en="📤Data Export"><span class="nav-icon">📤</span>Data Export</button>
-        <button class="nav-btn" data-s="predictive" data-i18n="Predictive Analytics" data-i18n-en="🤖Predictive Analytics"><span class="nav-icon">🤖</span>Predictive Analytics</button>
-        <button class="nav-btn" data-s="history" data-i18n="Historical Data" data-i18n-en="📜Historical Data"><span class="nav-icon">📜</span>Historical Data</button>
-        <button class="nav-btn" data-s="data-ingestion" data-i18n="Data Ingestion" data-i18n-en="📥Data Ingestion"><span class="nav-icon">📥</span>Data Ingestion</button>
-        <button class="nav-btn" data-s="data-processing" data-i18n="Data Processing" data-i18n-en="⚙Data Processing"><span class="nav-icon">⚙</span>Data Processing</button>
-        <button class="nav-btn" data-s="mapping-viz" data-i18n="Mapping & Viz" data-i18n-en="🗺Mapping & Viz"><span class="nav-icon">🗺</span>Mapping & Viz</button>
-        <button class="nav-btn" data-s="dashboard-sys" data-i18n="Dashboard System" data-i18n-en="📊Dashboard System"><span class="nav-icon">📊</span>Dashboard System</button>
-        <button class="nav-btn" data-s="alert-notif" data-i18n="Alert & Notification" data-i18n-en="🔔Alert & Notification"><span class="nav-icon">🔔</span>Alert & Notification</button>
-        <button class="nav-btn" data-s="alert-settings" data-i18n="Alert Thresholds" data-i18n-en="⚙Alert Thresholds"><span class="nav-icon">⚙</span>Alert Thresholds</button>
-        <button class="nav-btn" data-s="user-mgmt" data-i18n="User Management" data-i18n-en="👤User Management"><span class="nav-icon">👤</span>User Management</button>
-        <button class="nav-btn" data-s="reports" data-i18n="Report Generation" data-i18n-en="📄Report Generation"><span class="nav-icon">📄</span>Report Generation</button>
+        <button class="nav-btn" data-s="interactive-map" data-i18n="Interactive Map" data-i18n-en="🗺Interactive Map"><span class="nav-icon"><i data-lucide="map-pin"></i></span>Interactive Map</button>
+        <button class="nav-btn" data-s="spatial-analysis" data-i18n="Spatial Analysis" data-i18n-en="📐Spatial Analysis"><span class="nav-icon"><i data-lucide="ruler"></i></span>Spatial Analysis</button>
+        <button class="nav-btn" data-s="data-export" data-i18n="Data Export" data-i18n-en="📤Data Export"><span class="nav-icon"><i data-lucide="download"></i></span>Data Export</button>
+        <button class="nav-btn" data-s="predictive" data-i18n="Predictive Analytics" data-i18n-en="🤖Predictive Analytics"><span class="nav-icon"><i data-lucide="brain"></i></span>Predictive Analytics</button>
+        <button class="nav-btn" data-s="history" data-i18n="Historical Data" data-i18n-en="📜Historical Data"><span class="nav-icon"><i data-lucide="scroll-text"></i></span>Historical Data</button>
+        <button class="nav-btn" data-s="data-ingestion" data-i18n="Data Ingestion" data-i18n-en="📥Data Ingestion"><span class="nav-icon"><i data-lucide="upload"></i></span>Data Ingestion</button>
+        <button class="nav-btn" data-s="data-processing" data-i18n="Data Processing" data-i18n-en="⚙Data Processing"><span class="nav-icon"><i data-lucide="settings"></i></span>Data Processing</button>
+        <button class="nav-btn" data-s="mapping-viz" data-i18n="Mapping & Viz" data-i18n-en="🗺Mapping & Viz"><span class="nav-icon"><i data-lucide="map-pinned"></i></span>Mapping & Viz</button>
+        <button class="nav-btn" data-s="dashboard-sys" data-i18n="Dashboard System" data-i18n-en="📊Dashboard System"><span class="nav-icon"><i data-lucide="bar-chart-3"></i></span>Dashboard System</button>
+        <button class="nav-btn" data-s="alert-notif" data-i18n="Alert & Notification" data-i18n-en="🔔Alert & Notification"><span class="nav-icon"><i data-lucide="bell"></i></span>Alert & Notification</button>
+        <button class="nav-btn" data-s="alert-settings" data-i18n="Alert Thresholds" data-i18n-en="⚙Alert Thresholds"><span class="nav-icon"><i data-lucide="sliders"></i></span>Alert Thresholds</button>
+        <button class="nav-btn" data-s="user-mgmt" data-i18n="User Management" data-i18n-en="👤User Management"><span class="nav-icon"><i data-lucide="user-circle"></i></span>User Management</button>
+        <button class="nav-btn" data-s="reports" data-i18n="Report Generation" data-i18n-en="📄Report Generation"><span class="nav-icon"><i data-lucide="file-text"></i></span>Report Generation</button>
         <div class="nav-section-label">Info</div>
-        <button class="nav-btn" data-s="data-sources" data-i18n="Data Sources" data-i18n-en="🗄Data Sources"><span class="nav-icon">🗄</span>Data Sources</button>
+        <button class="nav-btn" data-s="data-sources" data-i18n="Data Sources" data-i18n-en="🗄Data Sources"><span class="nav-icon"><i data-lucide="database"></i></span>Data Sources</button>
     </div>
 </nav>
 
@@ -80,18 +79,18 @@
 <div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
 
 <!-- Mobile Menu Button -->
-<button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
+<button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()"><i data-lucide="menu"></i></button>
 <span id="last-updated-badge" style="position:fixed;top:10px;right:100px;font-size:11px;color:var(--text-muted);background:var(--bg-card);padding:4px 10px;border-radius:12px;border:1px solid var(--border);z-index:100;cursor:default">Loading…</span>
 
 <!-- Sidebar Overlay (mobile) -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
 <!-- Language Toggle -->
-<button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()">🌐 EN</button>
+<button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()"><i data-lucide="globe"></i> EN</button>
 
 <!-- Notification Bell -->
 <button class="bell-btn" id="bell-btn" title="Alerts">
-    🔔
+    <i data-lucide="bell"></i>
     <span class="bell-badge" id="bell-badge">0</span>
 </button>
 <div class="bell-dropdown" id="bell-dropdown"></div>
@@ -102,7 +101,7 @@
 <!-- Auth Modal -->
 <div id="auth-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center">
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;width:320px;box-shadow:var(--shadow-lg)">
-        <h3 style="margin-bottom:16px;text-align:center">🔐 Login</h3>
+        <h3 style="margin-bottom:16px;text-align:center"><i data-lucide="lock"></i> Login</h3>
         <input id="auth-user" type="text" placeholder="Username" style="width:100%;padding:10px;margin-bottom:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
         <input id="auth-pass" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
         <button onclick="doLogin()" style="width:100%;padding:10px;background:var(--accent);color:#0f0f0f;border:none;border-radius:9999px;cursor:pointer;font-weight:600;font-family:inherit">Login</button>
@@ -117,7 +116,8 @@
 <script src="/static/js/flood-replay-map.js?v=44"></script>
 <script src="/static/js/maps.js?v=44"></script>
 <script src="/static/js/charts.js?v=44"></script>
-<script src="/static/js/app.js?v=73"></script>
+<script src="/static/js/app.js?v=74"></script>
 <script src="/static/js/sections/alert-settings.js?v=1"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
