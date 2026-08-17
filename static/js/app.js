@@ -32,51 +32,57 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data then render default section
     loadAllData().then(() => {
         dataLoaded = true;
-        // Preload overview script first, then load section with retry
-        loadSectionScript('overview').then(() => {
-            // Retry up to 5 times if render_overview not yet defined
-            let attempts = 0;
-            const tryRender = () => {
-                const el = document.getElementById('sec-overview');
-                const fn = window['render_overview'];
-                if (fn && el) {
-                    fn(el);
-                    $$('.nav-btn').forEach(b => b.classList.remove('active'));
-                    const btn = document.querySelector('[data-s="overview"]');
-                    if (btn) btn.classList.add('active');
-                } else if (attempts < 5) {
-                    attempts++;
-                    setTimeout(tryRender, 100);
-                }
-            };
-            tryRender();
-        });
+        // Load overview section - use loadSection which handles everything
+        try {
+            loadSection('overview');
+        } catch(e) {
+            console.error('Failed to load overview:', e);
+            // Fallback: render directly if loadSection fails
+            const el = document.getElementById('sec-overview');
+            if (el && typeof render_overview === 'function') {
+                render_overview(el);
+            }
+        }
         // Preload popular sections in background after 2s
         setTimeout(() => {
-            ['command-center', 'temperature', 'rivers'].forEach(id => loadSectionScript(id));
+            ['command-center', 'temperature', 'rivers'].forEach(id => {
+                loadSectionScript(id).catch(() => {});
+            });
         }, 2000);
+    }).catch(e => {
+        console.error('loadAllData failed:', e);
+        // Even if data loading fails, try to render overview
+        dataLoaded = true;
+        try {
+            loadSection('overview');
+        } catch(e2) {
+            console.error('Overview fallback also failed:', e2);
+        }
     });
 });
 
 async function loadAllData() {
-    const [w, a, r, al, s] = await Promise.all([
+    const results = await Promise.allSettled([
         api('/api/weather/all'),
         api('/api/aqi/all'),
         api('/api/rivers'),
         api('/api/alerts'),
         api('/api/summary')
     ]);
-    weatherData = w || {}; aqiData = a || {};
-    riverData = r || {}; alertsData = al || [];
-    summaryData = s || {};
+    // Use settled results - partial data is better than no data
+    weatherData = (results[0].status === 'fulfilled' && results[0].value) || {};
+    aqiData = (results[1].status === 'fulfilled' && results[1].value) || {};
+    riverData = (results[2].status === 'fulfilled' && results[2].value) || {};
+    alertsData = (results[3].status === 'fulfilled' && results[3].value) || [];
+    summaryData = (results[4].status === 'fulfilled' && results[4].value) || {};
     lastDataUpdate = new Date();
     // Also expose on window for lazily-loaded sections
     window.weatherData = weatherData; window.aqiData = aqiData;
     window.riverData = riverData; window.alertsData = alertsData; window.summaryData = summaryData;
     window.lastDataUpdate = lastDataUpdate;
-    renderAlerts();
-    showFloatingAlerts();
-    updateLastUpdatedBadge();
+    try { renderAlerts(); } catch(e) { console.warn('renderAlerts failed:', e); }
+    try { showFloatingAlerts(); } catch(e) { console.warn('showFloatingAlerts failed:', e); }
+    try { updateLastUpdatedBadge(); } catch(e) { console.warn('updateLastUpdatedBadge failed:', e); }
 }
 
 // Auto-refresh data every 30 minutes
@@ -139,14 +145,23 @@ function updateMapTilesForTheme() {
 
 /* ─── Lazy-load section JS on demand ──────────────────────────── */
 const _loadedSections = new Set();
+const _loadingSections = new Set();
 
 function loadSectionScript(id) {
     return new Promise((resolve, reject) => {
         if (_loadedSections.has(id)) { resolve(); return; }
+        // If already loading, wait for it instead of creating duplicate script
+        if (_loadingSections.has(id)) {
+            const check = setInterval(() => {
+                if (_loadedSections.has(id)) { clearInterval(check); resolve(); }
+            }, 50);
+            return;
+        }
+        _loadingSections.add(id);
         const script = document.createElement('script');
-        script.src = `/static/js/sections/${id}.js?v=71`;
-        script.onload = () => { _loadedSections.add(id); resolve(); };
-        script.onerror = () => reject(new Error(`Failed to load ${id}.js`));
+        script.src = `/static/js/sections/${id}.js?v=72`;
+        script.onload = () => { _loadedSections.add(id); _loadingSections.delete(id); resolve(); };
+        script.onerror = () => { _loadingSections.delete(id); reject(new Error(`Failed to load ${id}.js`)); };
         document.body.appendChild(script);
     });
 }
