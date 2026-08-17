@@ -29,8 +29,7 @@ function initFloodReplayMap(containerId, options = {}) {
     });
 
     // Auto-detect theme if not specified
-    const isLight = style === 'light' || (!style && document.documentElement.classList.contains('light'));
-    const tileStyle = isLight ? 'light' : 'dark';
+    const tileStyle = style || 'terrain';
 
     // Add tile layer
     let currentTile = L.tileLayer(FLOOD_TILE_URLS[tileStyle], {
@@ -72,7 +71,7 @@ function cycleFloodMapBasemap(btn) {
     if (!leafletMap) return;
 
     const currentStyle = leafletMap._floodTileStyle;
-    const styles = ['dark', 'light', 'satellite', 'terrain'];
+    const styles = ['terrain', 'satellite', 'light', 'dark'];
     const nextIdx = (styles.indexOf(currentStyle) + 1) % styles.length;
     const nextStyle = styles[nextIdx];
 

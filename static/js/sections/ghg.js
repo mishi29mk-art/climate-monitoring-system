@@ -62,7 +62,7 @@ async function render_ghg(el) {
 
         setTimeout(() => {
             // Map with GHG markers
-            const map = initMap('ghg-map', { zoom: 5, style: 'light' });
+            const map = initMap('ghg-map', { zoom: 5, style: 'terrain' });
             const layer = L.layerGroup();
             d.districts.forEach(g => {
                 const color = g.co > 1000 ? '#ef4444' : g.co > 500 ? '#f97316' : g.co > 200 ? '#eab308' : '#22c55e';

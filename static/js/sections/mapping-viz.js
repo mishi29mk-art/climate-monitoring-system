@@ -143,7 +143,7 @@ async function render_mapping_viz(el) {
         setTimeout(() => {
             // Initialize Leaflet map preview
             try {
-                const map = initMap('map-viz-map', { zoom: 6, style: 'light' });
+                const map = initMap('map-viz-map', { zoom: 6, style: 'terrain' });
                 window._vizMap = map;
 
                 // Add layer markers for active layers

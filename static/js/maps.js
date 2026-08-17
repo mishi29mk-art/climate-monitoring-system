@@ -59,7 +59,7 @@ function initMap(id, opts = {}) {
     });
 
     // Default tile layer (dark no labels — cleaner look)
-    const style = opts.style || 'light';
+    const style = opts.style || 'terrain';
     const tileConfig = MAP_STYLES[style] || MAP_STYLES.light;
     const tileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
 
