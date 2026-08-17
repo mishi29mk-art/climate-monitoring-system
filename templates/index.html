@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=43">
+    <link rel="stylesheet" href="/static/css/style.css?v=44">
 </head>
 <body>
 <nav class="sidebar" id="sidebar">
@@ -18,6 +18,10 @@
             <span class="theme-icon-dark">☀</span>
             <span class="theme-icon-light">🌙</span>
         </button>
+    </div>
+    <div class="district-search-wrap">
+        <input type="text" id="district-search" class="district-search-input" placeholder="🔍 Search sections & districts…" autocomplete="off">
+        <div id="district-search-dropdown" class="district-search-dropdown"></div>
     </div>
     <div class="nav-items" id="nav-items">
         <div class="nav-section-label">Dashboard</div>
@@ -37,6 +41,7 @@
         <button class="nav-btn" data-s="disaster"><span class="nav-icon">🌋</span>Disaster Center</button>
         <div class="nav-section-label">Analysis</div>
         <button class="nav-btn" data-s="climate-trends"><span class="nav-icon">📈</span>Climate Trends</button>
+        <button class="nav-btn" data-s="compare"><span class="nav-icon">⚖</span>Compare Districts</button>
         <button class="nav-btn" data-s="satellite"><span class="nav-icon">🛰</span>Satellite Watch</button>
         <button class="nav-btn" data-s="agriculture"><span class="nav-icon">🌾</span>Agriculture</button>
         <button class="nav-btn" data-s="ghg"><span class="nav-icon">🏭</span>Greenhouse Gases</button>
@@ -60,6 +65,7 @@
         <button class="nav-btn" data-s="mapping-viz"><span class="nav-icon">🗺</span>Mapping & Viz</button>
         <button class="nav-btn" data-s="dashboard-sys"><span class="nav-icon">📊</span>Dashboard System</button>
         <button class="nav-btn" data-s="alert-notif"><span class="nav-icon">🔔</span>Alert & Notification</button>
+        <button class="nav-btn" data-s="alert-settings"><span class="nav-icon">⚙</span>Alert Thresholds</button>
         <button class="nav-btn" data-s="user-mgmt"><span class="nav-icon">👤</span>User Management</button>
         <button class="nav-btn" data-s="reports"><span class="nav-icon">📄</span>Report Generation</button>
         <div class="nav-section-label">Info</div>
@@ -75,12 +81,23 @@
 
 <!-- Mobile Menu Button -->
 <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
+<span id="last-updated-badge" style="position:fixed;top:10px;right:100px;font-size:11px;color:var(--text-muted);background:var(--bg-card);padding:4px 10px;border-radius:12px;border:1px solid var(--border);z-index:100;cursor:default">Loading…</span>
 
 <!-- Sidebar Overlay (mobile) -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
 <!-- Language Toggle -->
 <button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()">🌐 EN</button>
+
+<!-- Notification Bell -->
+<button class="bell-btn" id="bell-btn" title="Alerts">
+    🔔
+    <span class="bell-badge" id="bell-badge">0</span>
+</button>
+<div class="bell-dropdown" id="bell-dropdown"></div>
+
+<!-- Threshold Toast Container -->
+<div id="threshold-toast" style="position:fixed;bottom:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
 
 <!-- Auth Modal -->
 <div id="auth-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center">
@@ -100,6 +117,7 @@
 <script src="/static/js/flood-replay-map.js?v=44"></script>
 <script src="/static/js/maps.js?v=44"></script>
 <script src="/static/js/charts.js?v=44"></script>
-<script src="/static/js/app.js?v=60"></script>
+<script src="/static/js/app.js?v=71"></script>
+<script src="/static/js/sections/alert-settings.js?v=1"></script>
 </body>
 </html>

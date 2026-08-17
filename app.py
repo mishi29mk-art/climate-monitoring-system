@@ -670,9 +670,12 @@ def verify_token(token):
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     data = request.get_json() or {}
-    users = {'admin': {'id':1,'password':'admin123','role':'admin','name':'Admin User'},
-             'analyst': {'id':2,'password':'analyst123','role':'analyst','name':'Climate Analyst'},
-             'viewer': {'id':3,'password':'viewer123','role':'viewer','name':'Public Viewer'}}
+    import hashlib, os
+    users = {
+        'admin': {'id':1,'password':os.environ.get('ADMIN_PASS','admin123'),'role':'admin','name':'Admin User'},
+        'analyst': {'id':2,'password':os.environ.get('ANALYST_PASS','analyst123'),'role':'analyst','name':'Climate Analyst'},
+        'viewer': {'id':3,'password':os.environ.get('VIEWER_PASS','viewer123'),'role':'viewer','name':'Public Viewer'}
+    }
     user = users.get(data.get('username',''))
     if user and user['password'] == data.get('password',''):
         token = create_token(user['id'], user['role'])

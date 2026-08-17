@@ -1,5 +1,6 @@
 /* ─── Climate Monitor SPA Router ──────────────────────────── */
 let weatherData = null, aqiData = null, riverData = null, alertsData = null, summaryData = null;
+let lastDataUpdate = null;
 // Expose to window for sections loaded lazily
 window.weatherData = null; window.aqiData = null; window.riverData = null; window.alertsData = null; window.summaryData = null;
 let dataLoaded = false;
@@ -58,11 +59,33 @@ async function loadAllData() {
     weatherData = w || {}; aqiData = a || {};
     riverData = r || {}; alertsData = al || [];
     summaryData = s || {};
+    lastDataUpdate = new Date();
     // Also expose on window for lazily-loaded sections
     window.weatherData = weatherData; window.aqiData = aqiData;
     window.riverData = riverData; window.alertsData = alertsData; window.summaryData = summaryData;
+    window.lastDataUpdate = lastDataUpdate;
     renderAlerts();
+    updateLastUpdatedBadge();
 }
+
+// Auto-refresh data every 30 minutes
+setInterval(async () => {
+    try {
+        await loadAllData();
+        console.log('🔄 Data auto-refreshed at', new Date().toLocaleTimeString());
+    } catch(e) { console.error('Auto-refresh failed:', e); }
+}, 30 * 60 * 1000);
+
+function updateLastUpdatedBadge() {
+    const badge = document.getElementById('last-updated-badge');
+    if (badge && lastDataUpdate) {
+        const ago = Math.round((Date.now() - lastDataUpdate.getTime()) / 60000);
+        badge.textContent = ago < 1 ? 'Updated just now' : `Updated ${ago}m ago`;
+        badge.title = lastDataUpdate.toLocaleString();
+    }
+}
+// Update badge every minute
+setInterval(updateLastUpdatedBadge, 60000);
 
 function renderAlerts() {
     const dot = document.querySelector('.alert-dot');
@@ -110,7 +133,7 @@ function loadSectionScript(id) {
     return new Promise((resolve, reject) => {
         if (_loadedSections.has(id)) { resolve(); return; }
         const script = document.createElement('script');
-        script.src = `/static/js/sections/${id}.js?v=60`;
+        script.src = `/static/js/sections/${id}.js?v=70`;
         script.onload = () => { _loadedSections.add(id); resolve(); };
         script.onerror = () => reject(new Error(`Failed to load ${id}.js`));
         document.body.appendChild(script);
@@ -193,6 +216,118 @@ function doLogout() {
     authToken = null; currentUser = null;
     localStorage.removeItem('climate-token');
 }
+
+// ═══ District Search ═══════════════════════════════════════
+(function() {
+    const searchInput = document.getElementById('district-search');
+    const dropdown = document.getElementById('district-search-dropdown');
+    if (!searchInput || !dropdown) return;
+
+    let debounceTimer = null;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => handleDistrictSearch(), 200);
+    });
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // Focus the input and show results when focused
+    searchInput.addEventListener('focus', function() {
+        handleDistrictSearch();
+    });
+
+    function handleDistrictSearch() {
+        const query = searchInput.value.trim().toLowerCase();
+        const navBtns = $$('.nav-btn');
+        const navLabels = $$('.nav-section-label');
+
+        // 1) Filter sidebar nav buttons by text match
+        navBtns.forEach(btn => {
+            const text = btn.textContent.toLowerCase();
+            btn.style.display = (!query || text.includes(query)) ? '' : 'none';
+        });
+        // Also show/hide section labels based on whether any visible buttons follow them
+        navLabels.forEach(label => {
+            if (!query) { label.style.display = ''; return; }
+            let next = label.nextElementSibling;
+            let hasVisible = false;
+            while (next && !next.classList.contains('nav-section-label')) {
+                if (next.classList.contains('nav-btn') && next.style.display !== 'none') {
+                    hasVisible = true;
+                    break;
+                }
+                next = next.nextElementSibling;
+            }
+            label.style.display = hasVisible ? '' : 'none';
+        });
+
+        // 2) When 3+ chars, search weatherData districts
+        if (query.length >= 3 && window.weatherData && window.weatherData.districts) {
+            const districts = window.weatherData.districts;
+            const matches = [];
+            for (const d of districts) {
+                const name = (d.district || d.name || '').toLowerCase();
+                const province = (d.province || '').toLowerCase();
+                if (name.includes(query) || province.includes(query)) {
+                    matches.push(d);
+                    if (matches.length >= 20) break;
+                }
+            }
+            if (matches.length > 0) {
+                dropdown.innerHTML = matches.map(d => {
+                    const name = d.district || d.name || 'Unknown';
+                    const province = d.province || '';
+                    const temp = d.temperature != null ? d.temperature + '°C' : 'N/A';
+                    return `<div class="district-search-item" data-district="${name.replace(/"/g, '&quot;')}">
+                        <span class="district-search-name">${name}</span>
+                        <span class="district-search-meta">${province} · ${temp}</span>
+                    </div>`;
+                }).join('');
+                dropdown.style.display = 'block';
+
+                // 3) Click handler — load city-weather filtered to district
+                dropdown.querySelectorAll('.district-search-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const district = item.dataset.district;
+                        searchInput.value = district;
+                        dropdown.style.display = 'none';
+                        loadSection('city-weather');
+                        // Wait for section to load, then trigger district filter
+                        setTimeout(() => {
+                            const section = document.getElementById('sec-city-weather');
+                            if (section) {
+                                // Try common filter patterns
+                                const filterInput = section.querySelector('input[type="text"], select');
+                                if (filterInput && filterInput.tagName === 'INPUT') {
+                                    filterInput.value = district;
+                                    filterInput.dispatchEvent(new Event('input'));
+                                }
+                                // Also try to set a global filter variable if the section exposes one
+                                if (typeof window.setCityFilter === 'function') {
+                                    window.setCityFilter(district);
+                                }
+                            }
+                        }, 500);
+                    });
+                });
+            } else {
+                dropdown.innerHTML = '<div class="district-search-empty">No matching districts</div>';
+                dropdown.style.display = 'block';
+            }
+        } else if (query.length >= 3) {
+            dropdown.innerHTML = '<div class="district-search-empty">Weather data not loaded yet</div>';
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+})();
 
 // Auto-save snapshot daily
 async function autoSaveSnapshot() {
