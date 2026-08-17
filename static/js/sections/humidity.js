@@ -170,7 +170,7 @@ function render_humidity(el) {
 
         const top10 = humidityData.slice(0, 10);
         const tc = document.getElementById('hum-top10-line');
-        const dayLabels = w[top10[0]?.name]?.forecast?.daily?.time || [];
+        const dayLabels = w[top10[0]?.name]?.daily?.time || [];
         if (tc && dayLabels.length) {
             const cols = [C.info, C.accent, C.cyan, C.danger, C.orange, C.warning, C.success, C.purple, '#f0883e', '#e3b341'];
             makeLine(tc.getContext('2d'), dayLabels.map(d => d.slice(5)),

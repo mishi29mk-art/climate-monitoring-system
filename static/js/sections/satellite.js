@@ -29,7 +29,7 @@ function render_satellite(el) {
     // Vegetation health (NDVI proxy)
     const vegHealth = entries.map(([name, d]) => {
         const rain = d.stats?.rain_total_7d || 0;
-        const humidity = d.forecast?.daily?.relative_humidity_2m_max?.[0] || 50;
+        const humidity = d.daily?.relative_humidity_2m_max?.[0] || d.forecast?.hourly?.relative_humidity_2m?.[0] || 50;
         const ndvi = Math.min(0.9, Math.max(0.1, 0.3 + rain * 0.005 + humidity * 0.003));
         const health = ndvi > 0.6 ? 'Good' : ndvi > 0.4 ? 'Moderate' : 'Stressed';
         return { name, province: d.province, lat: d.lat, lng: d.lng, ndvi, health };
@@ -129,7 +129,7 @@ function render_satellite(el) {
                     <td style="color:${d.ndvi > 0.6 ? C.success : d.ndvi > 0.4 ? C.warning : C.danger}">${fmt(d.ndvi, 2)}</td>
                     <td>${d.health === 'Good' ? '🟢' : d.health === 'Moderate' ? '🟡' : '🔴'} ${d.health}</td>
                     <td>${fmtMm(weatherData[d.name]?.stats?.rain_total_7d)}</td>
-                    <td>${fmt(weatherData[d.name]?.forecast?.daily?.relative_humidity_2m_max?.[0] || 50, 0)}%</td>
+                    <td>${fmt(weatherData[d.name]?.daily?.relative_humidity_2m_max?.[0] || 50, 0)}%</td>
                 </tr>`).join('')}</tbody>
             </table>
         </div>

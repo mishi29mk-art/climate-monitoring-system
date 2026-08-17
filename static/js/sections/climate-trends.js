@@ -14,7 +14,7 @@ function render_climate_trends(el) {
         const rain = stats.rain_total_7d || 0;
         const wind = stats.wind_max_7d || 0;
         const uv = stats.uv_max_7d || 0;
-        const humid = d.forecast?.daily?.relative_humidity_2m_max?.[0] || stats.humidity_avg || 50;
+        const humid = d.daily?.relative_humidity_2m_max?.[0] || stats.humidity_avg || 50;
         const tempAnomaly = tempMax - NORMALS.tempMax;
         const rainAnomaly = rain - NORMALS.rainMonth;
         return {

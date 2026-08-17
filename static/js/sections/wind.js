@@ -94,7 +94,7 @@ function render_wind(el) {
             <div class="tbl-scroll" style="max-height:300px">
                 <table class="tbl"><thead><tr><th>District</th><th>Province</th><th>Wind</th><th>Gusts</th><th>Direction</th><th>Status</th></tr></thead>
                 <tbody>${windData.slice(0, 20).map(d => {
-                    const daily = w[d.name]?.forecast?.daily || {};
+                    const daily = w[d.name]?.daily || {};
                     const dirs = daily?.wind_direction_10m_dominant;
                     const dir = dirs && dirs.length ? directionName(dirs[0]) : '-';
                     return `<tr><td><b>${d.name}</b></td><td>${d.province}</td>
@@ -134,11 +134,11 @@ function render_wind(el) {
 
         const top10 = windData.slice(0, 10);
         const tc = document.getElementById('wind-top10-line');
-        const dayLabels = w[top10[0]?.name]?.forecast?.daily?.time || [];
+        const dayLabels = w[top10[0]?.name]?.daily?.time || [];
         if (tc && dayLabels.length) {
             const cols = [C.danger, C.orange, C.warning, C.yellow, C.success, C.info, C.accent, C.purple, C.cyan, '#f0883e'];
             makeLine(tc.getContext('2d'), dayLabels.map(d => d.slice(5)),
-                top10.map((d, i) => ({ label: d.name.substring(0, 10), data: w[d.name]?.forecast?.daily?.wind_speed_10m_max || [], borderColor: cols[i] })));
+                top10.map((d, i) => ({ label: d.name.substring(0, 10), data: w[d.name]?.daily?.wind_speed_10m_max || [], borderColor: cols[i] })));
         }
 
         const wr = document.getElementById('wind-rose');
@@ -146,7 +146,7 @@ function render_wind(el) {
             const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
             const dirCounts = new Array(8).fill(0);
             entries.forEach(([, d]) => {
-                const dd = d.forecast?.daily?.wind_direction_10m_dominant;
+                const dd = d.daily?.wind_direction_10m_dominant;
                 if (dd && dd.length) dirCounts[Math.round(dd[0] / 45) % 8]++;
             });
             makeRadar(wr.getContext('2d'), dirs, [{ label: 'Frequency', data: dirCounts, borderColor: C.cyan, backgroundColor: 'rgba(57,210,192,.15)' }]);

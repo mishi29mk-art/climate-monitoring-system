@@ -173,7 +173,7 @@ function render_precipitation(el) {
                 <thead><tr><th>#</th><th>District</th><th>Province</th><th>7-Day Total</th><th>Max Daily</th><th>Prob. Max</th><th>Precip Hours</th></tr></thead>
                 <tbody>
                 ${sorted.map(([n,d], i) => {
-                    const daily = d.forecast?.daily || {};
+                    const daily = d.daily || {};
                     const probMax = daily?.precipitation_probability_max;
                     const precipHours = daily?.precipitation_hours;
                     return `<tr>
@@ -202,7 +202,7 @@ function render_precipitation(el) {
                 ? (_, d) => rainColor(d.stats?.rain_max_daily)
                 : mode === 'prob'
                 ? (_, d) => {
-                    const prob = d.forecast?.daily?.precipitation_probability_max;
+                    const prob = d.daily?.precipitation_probability_max;
                     if (!prob || !prob.length) return C.success;
                     const maxP = Math.max(...prob);
                     return maxP >= 80 ? C.danger : maxP >= 50 ? C.warning : maxP >= 25 ? C.yellow : C.success;
@@ -212,7 +212,7 @@ function render_precipitation(el) {
                 ? (n, d) => `<b>${n}</b><br>${d.province}<br>Max daily: ${fmtMm(d.stats?.rain_max_daily)}<br>7d total: ${fmtMm(d.stats?.rain_total_7d)}`
                 : mode === 'prob'
                 ? (n, d) => {
-                    const prob = d.forecast?.daily?.precipitation_probability_max;
+                    const prob = d.daily?.precipitation_probability_max;
                     const maxP = prob && prob.length ? Math.max(...prob) : 0;
                     return `<b>${n}</b><br>Max probability: ${maxP}%<br>7d total: ${fmtMm(d.stats?.rain_total_7d)}`;
                 }
@@ -256,7 +256,7 @@ function render_precipitation(el) {
         const top10 = sorted.filter(([,d]) => (d.stats?.rain_total_7d||0) > 0).slice(0, 10);
         const trendCanvas = document.getElementById('rain-top10-line');
         if (trendCanvas && top10.length) {
-            const daily0 = top10[0]?.[1]?.forecast?.daily;
+            const daily0 = top10[0]?.[1]?.daily;
             const dayLabels = daily0?.time || [];
             if (dayLabels.length) {
                 const colors = [C.info, C.accent, C.cyan, C.danger, C.orange, C.warning, C.success, C.purple, '#f0883e', '#e3b341'];
@@ -264,7 +264,7 @@ function render_precipitation(el) {
                     dayLabels.map(d => d.slice(5)),
                     top10.map(([n, d], i) => ({
                         label: n.substring(0, 10),
-                        data: d.forecast?.daily?.precipitation_sum || [],
+                        data: d.daily?.precipitation_sum || [],
                         borderColor: colors[i % colors.length]
                     }))
                 );

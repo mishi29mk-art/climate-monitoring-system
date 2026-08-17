@@ -106,7 +106,7 @@ function render_uv(el) {
         // Map
         const map = initFloodReplayMap('uv-map', { zoom: 6 });
         addDistrictMarkers(map, w, (_, d) => uvColor(d.stats?.uv_max_7d),
-            (n, d) => `<b>${n}</b><br>${d.province}<br>UV: ${fmt(d.stats?.uv_max_7d, 1)}<br>Radiation: ${fmt(d.forecast?.daily?.shortwave_radiation_sum?.[0] || 0, 0)} MJ/m²`);
+            (n, d) => `<b>${n}</b><br>${d.province}<br>UV: ${fmt(d.stats?.uv_max_7d, 1)}<br>Radiation: ${fmt(d.daily?.shortwave_radiation_sum?.[0] || 0, 0)} MJ/m²`);
         // Doughnut
         const dc = document.getElementById('uv-doughnut');
         if (dc) makeDoughnut(dc.getContext('2d'),
@@ -121,11 +121,11 @@ function render_uv(el) {
         // Trend
         const top10 = uvData.slice(0, 10);
         const tc = document.getElementById('uv-top10-line');
-        const dayLabels = w[top10[0]?.name]?.forecast?.daily?.time || [];
+        const dayLabels = w[top10[0]?.name]?.daily?.time || [];
         if (tc && dayLabels.length) {
             const cols = [C.danger, C.orange, C.warning, C.yellow, C.success, C.info, C.accent, C.purple, C.cyan, '#f0883e'];
             makeLine(tc.getContext('2d'), dayLabels.map(d => d.slice(5)),
-                top10.map((d, i) => ({ label: d.name.substring(0, 10), data: w[d.name]?.forecast?.daily?.uv_index_max || [], borderColor: cols[i] })));
+                top10.map((d, i) => ({ label: d.name.substring(0, 10), data: w[d.name]?.daily?.uv_index_max || [], borderColor: cols[i] })));
         }
         // Radar
         const rd = document.getElementById('uv-radar');

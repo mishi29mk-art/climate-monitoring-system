@@ -231,7 +231,7 @@ function render_temperature(el) {
 
         // ─── Top 10 trend line ───
         const top10 = sorted.slice(0, 10);
-        const daily = top10[0]?.[1]?.forecast?.daily;
+        const daily = top10[0]?.[1]?.daily;
         const dayLabels = daily?.time || [];
         const trendCanvas = document.getElementById('temp-top10-line');
         if (trendCanvas && dayLabels.length) {
@@ -240,7 +240,7 @@ function render_temperature(el) {
                 dayLabels.map(d => d.slice(5)),
                 top10.map(([n, d], i) => ({
                     label: n.substring(0, 10),
-                    data: d.forecast?.daily?.temperature_2m_max || [],
+                    data: d.daily?.temperature_2m_max || [],
                     borderColor: colors[i % colors.length]
                 }))
             );

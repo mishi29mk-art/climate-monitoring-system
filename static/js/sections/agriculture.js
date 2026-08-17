@@ -17,7 +17,7 @@ function render_agriculture(el) {
         const maxT = stats.temp_max_7d || 35;
         const minT = stats.temp_min_7d || 22;
         const rain = stats.rain_total_7d || 0;
-        const humidity = d.forecast?.daily?.relative_humidity_2m_max?.[0] || 50;
+        const humidity = d.daily?.relative_humidity_2m_max?.[0] || 50;
         const wind = stats.wind_max_7d || 10;
 
         // Growing Degree Days (daily avg over 7 days)

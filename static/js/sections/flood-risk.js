@@ -8,7 +8,7 @@ function render_flood_risk(el) {
     // Compute composite flood risk score per district using rainfall + river discharge
     const riskScores = {};
     Object.entries(weatherData).forEach(([name, d]) => {
-        const rain7d = d.stats?.rain_total_7d || d.forecast?.daily?.precipitation_sum?.reduce((a, b) => a + (b || 0), 0) || 0;
+        const rain7d = d.stats?.rain_total_7d || d.daily?.precipitation_sum?.reduce((a, b) => a + (b || 0), 0) || 0;
         const maxTemp = d.stats?.temp_max_7d || 0;
 
         // Find nearest river stations (within ~0.5 degree)
