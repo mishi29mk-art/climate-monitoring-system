@@ -70,41 +70,36 @@ function initMap(id, opts = {}) {
     map._currentTile = tileLayer;
     map._currentStyle = style;
 
-    // Add basemap switcher control — popup with 5 options
+    // Add basemap switcher control — horizontal scrollable bar with all 5 options
     const basemapCtrl = L.control({ position: 'topright' });
     basemapCtrl.onAdd = function() {
         const container = L.DomUtil.create('div', 'basemap-selector');
-        container.style.cssText = 'background:rgba(15,23,42,0.95);border-radius:8px;padding:4px;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-family:Inter,system-ui,sans-serif;position:relative;';
-        
-        const activeBtn = L.DomUtil.create('div', '', container);
-        activeBtn.style.cssText = 'padding:6px 10px;color:#e2e8f0;font-size:11px;font-weight:600;cursor:pointer;text-align:center;border-radius:6px;transition:background 0.15s;';
-        activeBtn.textContent = MAP_STYLES[style]?.name || '🗺 Map';
-        activeBtn.id = 'bm-map-' + id;
-        
-        const dropdown = L.DomUtil.create('div', '', container);
-        dropdown.style.cssText = 'display:none;position:absolute;top:100%;right:0;margin-top:4px;background:rgba(15,23,42,0.95);border-radius:8px;padding:4px;min-width:120px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.4);';
-        
+        container.style.cssText = 'background:rgba(15,23,42,0.95);border-radius:8px;padding:4px 6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-family:Inter,system-ui,sans-serif;display:flex;gap:3px;overflow-x:auto;max-width:360px;scrollbar-width:thin;scrollbar-color:#334155 transparent;';
+
         const styles = ['terrain', 'satellite', 'voyager', 'light', 'dark'];
         styles.forEach(s => {
-            const opt = L.DomUtil.create('div', '', dropdown);
-            opt.style.cssText = 'padding:6px 10px;color:#94a3b8;font-size:11px;cursor:pointer;border-radius:4px;transition:all 0.15s;white-space:nowrap;';
+            const opt = L.DomUtil.create('div', '', container);
+            const isActive = s === style;
+            opt.style.cssText = 'padding:5px 7px;color:' + (isActive ? '#e2e8f0' : '#64748b') + ';font-size:10px;font-weight:' + (isActive ? '700' : '500') + ';cursor:pointer;border-radius:5px;transition:all 0.15s;white-space:nowrap;flex-shrink:0;background:' + (isActive ? 'rgba(62,207,142,0.2)' : 'transparent') + ';border:1px solid ' + (isActive ? '#3ecf8e' : 'transparent') + ';';
             opt.textContent = MAP_STYLES[s]?.name || s;
-            if (s === style) { opt.style.color = '#3b82f6'; opt.style.fontWeight = '700'; }
-            opt.onmouseenter = () => { opt.style.background = 'rgba(59,130,246,0.15)'; opt.style.color = '#e2e8f0'; };
-            opt.onmouseleave = () => { opt.style.background = 'transparent'; opt.style.color = s === style ? '#3b82f6' : '#94a3b8'; };
+            opt.title = MAP_STYLES[s]?.name || s;
+            opt.dataset.style = s;
+            opt.onmouseenter = () => { if (s !== map._currentStyle) { opt.style.background = 'rgba(62,207,142,0.08)'; opt.style.color = '#cbd5e1'; } };
+            opt.onmouseleave = () => { if (s !== map._currentStyle) { opt.style.background = 'transparent'; opt.style.color = '#64748b'; } };
             opt.onclick = (e) => {
                 e.stopPropagation();
                 switchMapStyle(map, s);
-                document.getElementById('bm-map-' + id).textContent = MAP_STYLES[s]?.name || s;
-                dropdown.querySelectorAll('div').forEach(d => { d.style.color = '#94a3b8'; d.style.fontWeight = '400'; });
-                opt.style.color = '#3b82f6';
-                opt.style.fontWeight = '700';
-                dropdown.style.display = 'none';
+                container.querySelectorAll('div').forEach(d => {
+                    const ds = d.dataset.style;
+                    const isNowActive = ds === s;
+                    d.style.background = isNowActive ? 'rgba(62,207,142,0.2)' : 'transparent';
+                    d.style.borderColor = isNowActive ? '#3ecf8e' : 'transparent';
+                    d.style.color = isNowActive ? '#e2e8f0' : '#64748b';
+                    d.style.fontWeight = isNowActive ? '700' : '500';
+                });
             };
         });
-        
-        activeBtn.onclick = (e) => { e.stopPropagation(); dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none'; };
-        document.addEventListener('click', () => { dropdown.style.display = 'none'; });
+
         L.DomEvent.disableClickPropagation(container);
         return container;
     };
