@@ -117,7 +117,7 @@ _optimized_weather_cache = None
 _optimized_weather_time = 0
 
 def get_optimized_weather():
-    """Return lightweight weather data (current only, no hourly/daily forecast)"""
+    """Return optimized weather data with stats and hourly data needed for charts"""
     global _optimized_weather_cache, _optimized_weather_time
     
     # Return cached if fresh (5 min)
@@ -131,26 +131,32 @@ def get_optimized_weather():
     optimized = {}
     for district, info in d.items():
         forecast = info.get('forecast', {})
-        current = forecast.get('current_weather', {})
+        daily = forecast.get('daily', {})
+        hourly = forecast.get('hourly', {})
+        stats = info.get('stats', {})
         
-        # Extract only what the frontend needs
         optimized[district] = {
             'province': info.get('province'),
             'lat': info.get('lat'),
             'lng': info.get('lng'),
             'population': info.get('population'),
-            'current': {
-                'temperature': current.get('temperature'),
-                'windspeed': current.get('windspeed'),
-                'weathercode': current.get('weathercode'),
-                'winddirection': current.get('winddirection'),
-            },
-            # Daily summary for 7-day forecast
+            'stats': stats,  # Required: temp_max_7d, temp_min_7d, rain_total_7d, etc.
+            # Daily forecast (7 days)
             'daily': {
-                'time': forecast.get('daily', {}).get('time', [])[:7],
-                'temperature_2m_max': forecast.get('daily', {}).get('temperature_2m_max', [])[:7],
-                'temperature_2m_min': forecast.get('daily', {}).get('temperature_2m_min', [])[:7],
-                'precipitation_sum': forecast.get('daily', {}).get('precipitation_sum', [])[:7],
+                'time': daily.get('time', [])[:7],
+                'temperature_2m_max': daily.get('temperature_2m_max', [])[:7],
+                'temperature_2m_min': daily.get('temperature_2m_min', [])[:7],
+                'precipitation_sum': daily.get('precipitation_sum', [])[:7],
+                'wind_speed_10m_max': daily.get('wind_speed_10m_max', [])[:7],
+                'uv_index_max': daily.get('uv_index_max', [])[:7],
+            },
+            # Hourly data (first 24 hours for charts)
+            'forecast': {
+                'hourly': {
+                    'relative_humidity_2m': hourly.get('relative_humidity_2m', [])[:24],
+                    'wind_speed_10m': hourly.get('wind_speed_10m', [])[:24],
+                    'temperature_2m': hourly.get('temperature_2m', [])[:24],
+                }
             }
         }
     
