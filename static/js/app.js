@@ -32,14 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data then render default section
     loadAllData().then(() => {
         dataLoaded = true;
-        // Preload overview script first, then load section
+        // Preload overview script first, then load section with retry
         loadSectionScript('overview').then(() => {
-            const el = document.getElementById('sec-overview');
-            const fn = window['render_overview'];
-            if (fn && el) fn(el);
-            $$('.nav-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.querySelector('[data-s="overview"]');
-            if (btn) btn.classList.add('active');
+            // Retry up to 5 times if render_overview not yet defined
+            let attempts = 0;
+            const tryRender = () => {
+                const el = document.getElementById('sec-overview');
+                const fn = window['render_overview'];
+                if (fn && el) {
+                    fn(el);
+                    $$('.nav-btn').forEach(b => b.classList.remove('active'));
+                    const btn = document.querySelector('[data-s="overview"]');
+                    if (btn) btn.classList.add('active');
+                } else if (attempts < 5) {
+                    attempts++;
+                    setTimeout(tryRender, 100);
+                }
+            };
+            tryRender();
         });
         // Preload popular sections in background after 2s
         setTimeout(() => {
@@ -65,6 +75,7 @@ async function loadAllData() {
     window.riverData = riverData; window.alertsData = alertsData; window.summaryData = summaryData;
     window.lastDataUpdate = lastDataUpdate;
     renderAlerts();
+    showFloatingAlerts();
     updateLastUpdatedBadge();
 }
 

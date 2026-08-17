@@ -2,13 +2,61 @@
 """Climate Monitoring & Mapping System — Pakistan
 Full climate monitoring: temperature, AQI, precipitation, drought, wind, UV, humidity, rivers, floods, agriculture, disasters.
 """
-import os, json, time, subprocess, threading
+import os, json, time, subprocess, threading, re, hashlib
+from functools import wraps
 from flask import Flask, render_template, jsonify, request, Response
 from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(BASE, 'data')
+
+# ─── Security: Input Validation ─────────────────────────────────────
+def validate_name(name, max_length=50):
+    """Validate and sanitize name parameters (district names, etc.)"""
+    if not name or not isinstance(name, str):
+        return None
+    # Strip whitespace, limit length, allow only alphanumeric, spaces, hyphens, periods
+    name = name.strip()[:max_length]
+    if not re.match(r'^[a-zA-Z0-9\s\-\.\']+$', name):
+        return None
+    return name
+
+# ─── Security: Rate Limiting (in-memory) ────────────────────────────
+_rate_limit_cache = {}
+RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX = 60  # requests per window per IP
+
+def rate_limit(f):
+    """Simple in-memory rate limiter"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        ip = request.remote_addr or '0.0.0.0'
+        now = time.time()
+        key = f"{ip}:{f.__name__}"
+        
+        # Clean old entries
+        if key in _rate_limit_cache:
+            _rate_limit_cache[key] = [t for t in _rate_limit_cache[key] if now - t < RATE_LIMIT_WINDOW]
+        else:
+            _rate_limit_cache[key] = []
+        
+        # Check rate
+        if len(_rate_limit_cache[key]) >= RATE_LIMIT_MAX:
+            return jsonify({'error': 'Rate limit exceeded. Try again later.'}), 429
+        
+        _rate_limit_cache[key].append(now)
+        return f(*args, **kwargs)
+    return decorated
+
+# ─── Security: CORS Headers ─────────────────────────────────────────
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
 
 # ─── Helpers ────────────────────────────────────────────────────────
 def load_json(name):
@@ -35,15 +83,20 @@ def health():
 
 # ─── Districts ──────────────────────────────────────────────────────
 @app.route('/api/districts')
+@rate_limit
 def get_districts():
     d = load_json('pakistan_districts.json')
     return jsonify(d or [])
 
 @app.route('/api/districts/<name>')
+@rate_limit
 def get_district(name):
+    validated = validate_name(name)
+    if not validated:
+        return jsonify({'error': 'Invalid name parameter'}), 400
     districts = load_json('pakistan_districts.json') or []
     for d in districts:
-        if d['name'].lower() == name.lower():
+        if d['name'].lower() == validated.lower():
             return jsonify(d)
     return jsonify({'error': 'Not found'}), 404
 
@@ -60,6 +113,7 @@ def cache_response(data, max_age=300):
 
 # ─── Weather (all climate parameters) ───────────────────────────────
 @app.route('/api/weather/all')
+@rate_limit
 def get_all_weather():
     d = load_json('weather_cache.json')
     if d:
@@ -67,18 +121,23 @@ def get_all_weather():
     return jsonify({'error': 'No weather data yet. Run fetch_weather.py'}), 404
 
 @app.route('/api/weather/<name>')
+@rate_limit
 def get_weather(name):
+    validated = validate_name(name)
+    if not validated:
+        return jsonify({'error': 'Invalid name parameter'}), 400
     cache = load_json('weather_cache.json') or {}
-    if name in cache:
-        return jsonify(cache[name])
+    if validated in cache:
+        return jsonify(cache[validated])
     # Try case-insensitive
     for k, v in cache.items():
-        if k.lower() == name.lower():
+        if k.lower() == validated.lower():
             return jsonify(v)
-    return jsonify({'error': f'No weather data for {name}'}), 404
+    return jsonify({'error': f'No weather data for {validated}'}), 404
 
 # ─── Air Quality ────────────────────────────────────────────────────
 @app.route('/api/aqi/all')
+@rate_limit
 def get_all_aqi():
     d = load_json('aqi_cache.json')
     if d:
@@ -86,17 +145,22 @@ def get_all_aqi():
     return jsonify({'error': 'No AQI data yet. Run fetch_aqi.py'}), 404
 
 @app.route('/api/aqi/<name>')
+@rate_limit
 def get_aqi(name):
+    validated = validate_name(name)
+    if not validated:
+        return jsonify({'error': 'Invalid name parameter'}), 400
     cache = load_json('aqi_cache.json') or {}
-    if name in cache:
-        return jsonify(cache[name])
+    if validated in cache:
+        return jsonify(cache[validated])
     for k, v in cache.items():
-        if k.lower() == name.lower():
+        if k.lower() == validated.lower():
             return jsonify(v)
-    return jsonify({'error': f'No AQI data for {name}'}), 404
+    return jsonify({'error': f'No AQI data for {validated}'}), 404
 
 # ─── River Discharge ────────────────────────────────────────────────
 @app.route('/api/rivers')
+@rate_limit
 def get_rivers():
     d = load_json('river_cache.json')
     if d:
@@ -105,6 +169,7 @@ def get_rivers():
 
 # ─── Climate Normals (historical) ───────────────────────────────────
 @app.route('/api/climate/normals')
+@rate_limit
 def get_climate_normals():
     d = load_json('climate_normals.json')
     if d:
@@ -112,17 +177,22 @@ def get_climate_normals():
     return jsonify({'error': 'No climate normals yet'}), 404
 
 @app.route('/api/climate/normals/<name>')
+@rate_limit
 def get_district_normals(name):
+    validated = validate_name(name)
+    if not validated:
+        return jsonify({'error': 'Invalid name parameter'}), 400
     cache = load_json('climate_normals.json') or {}
-    if name in cache:
-        return jsonify(cache[name])
+    if validated in cache:
+        return jsonify(cache[validated])
     for k, v in cache.items():
-        if k.lower() == name.lower():
+        if k.lower() == validated.lower():
             return jsonify(v)
-    return jsonify({'error': f'No normals for {name}'}), 404
+    return jsonify({'error': f'No normals for {validated}'}), 404
 
 # ─── Alerts ─────────────────────────────────────────────────────────
 @app.route('/api/alerts')
+@rate_limit
 def get_alerts():
     alerts = generate_alerts()
     return cache_response(alerts, 120)  # 2 min cache
@@ -644,9 +714,11 @@ def save_daily_snapshot():
     return jsonify({'status': 'saved', 'date': filename, 'districts': len(weather)})
 
 # ═══ User Authentication (JWT) ══════════════════════════════
-import hashlib, hmac, base64
+import hmac, base64
 
-JWT_SECRET = os.environ.get('JWT_SECRET', 'climate-monitor-secret-key-2026')
+JWT_SECRET = os.environ.get('JWT_SECRET')
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable is required")
 
 def create_token(user_id, role):
     payload = {'user_id': user_id, 'role': role, 'exp': int(time.time()) + 86400}
@@ -668,16 +740,34 @@ def verify_token(token):
     except: return None
 
 @app.route('/api/auth/login', methods=['POST'])
+@rate_limit
 def login():
     data = request.get_json() or {}
-    import hashlib, os
+    
+    # Passwords MUST be set via environment variables
+    # No hardcoded defaults for security
+    admin_pass = os.environ.get('ADMIN_PASS')
+    analyst_pass = os.environ.get('ANALYST_PASS')
+    viewer_pass = os.environ.get('VIEWER_PASS')
+    
+    if not all([admin_pass, analyst_pass, viewer_pass]):
+        return jsonify({'error': 'Server configuration error. Contact administrator.'}), 500
+    
     users = {
-        'admin': {'id':1,'password':os.environ.get('ADMIN_PASS','admin123'),'role':'admin','name':'Admin User'},
-        'analyst': {'id':2,'password':os.environ.get('ANALYST_PASS','analyst123'),'role':'analyst','name':'Climate Analyst'},
-        'viewer': {'id':3,'password':os.environ.get('VIEWER_PASS','viewer123'),'role':'viewer','name':'Public Viewer'}
+        'admin': {'id':1,'password':admin_pass,'role':'admin','name':'Admin User'},
+        'analyst': {'id':2,'password':analyst_pass,'role':'analyst','name':'Climate Analyst'},
+        'viewer': {'id':3,'password':viewer_pass,'role':'viewer','name':'Public Viewer'}
     }
-    user = users.get(data.get('username',''))
-    if user and user['password'] == data.get('password',''):
+    
+    # Validate input
+    username = data.get('username', '').strip()[:50]
+    password = data.get('password', '').strip()[:100]
+    
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+    
+    user = users.get(username)
+    if user and user['password'] == password:
         token = create_token(user['id'], user['role'])
         return jsonify({'token': token, 'user': {'id':user['id'],'name':user['name'],'role':user['role']}})
     return jsonify({'error': 'Invalid credentials'}), 401

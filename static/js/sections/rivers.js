@@ -144,9 +144,62 @@ async function render_rivers(el) {
             const map = L.map('river-map', {
                 center: [31.5, 72.0], zoom: 5, zoomControl: true
             });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
                 maxZoom: 18, subdomains: 'abcd'
             }).addTo(map);
+
+            // Store tile references for basemap switching
+            map._currentTile = tileLayer;
+            map._currentStyle = 'dark';
+
+            // Add basemap switcher control — horizontal scrollable bar
+            const FLOOD_TILE_URLS = {
+                terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                voyager: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                dark: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+            };
+            const FLOOD_TILE_NAMES = {
+                terrain: '🗺 Terrain', satellite: '🛰 Satellite', voyager: '🎨 Voyager',
+                light: '☀ Light', dark: '🌙 Dark'
+            };
+
+            const basemapCtrl = L.control({ position: 'topright' });
+            basemapCtrl.onAdd = function() {
+                const container = L.DomUtil.create('div', 'basemap-selector');
+                container.style.cssText = 'background:rgba(15,23,42,0.95);border-radius:8px;padding:4px 6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-family:Inter,system-ui,sans-serif;display:flex;gap:3px;overflow-x:auto;max-width:360px;scrollbar-width:thin;scrollbar-color:#334155 transparent;';
+
+                const styles = ['terrain', 'satellite', 'voyager', 'light', 'dark'];
+                styles.forEach(s => {
+                    const opt = L.DomUtil.create('div', '', container);
+                    const isActive = s === 'dark';
+                    opt.style.cssText = 'padding:5px 7px;color:' + (isActive ? '#e2e8f0' : '#64748b') + ';font-size:10px;font-weight:' + (isActive ? '700' : '500') + ';cursor:pointer;border-radius:5px;transition:all 0.15s;white-space:nowrap;flex-shrink:0;background:' + (isActive ? 'rgba(62,207,142,0.2)' : 'transparent') + ';border:1px solid ' + (isActive ? '#3ecf8e' : 'transparent') + ';';
+                    opt.textContent = FLOOD_TILE_NAMES[s];
+                    opt.title = FLOOD_TILE_NAMES[s];
+                    opt.dataset.style = s;
+                    opt.onmouseenter = () => { if (s !== map._currentStyle) { opt.style.background = 'rgba(62,207,142,0.08)'; opt.style.color = '#cbd5e1'; } };
+                    opt.onmouseleave = () => { if (s !== map._currentStyle) { opt.style.background = 'transparent'; opt.style.color = '#64748b'; } };
+                    opt.onclick = (e) => {
+                        e.stopPropagation();
+                        if (map._currentTile) map.removeLayer(map._currentTile);
+                        const opts2 = { maxZoom: 18, subdomains: s === 'satellite' ? [] : (s === 'terrain' ? 'abc' : 'abcd') };
+                        map._currentTile = L.tileLayer(FLOOD_TILE_URLS[s], opts2).addTo(map);
+                        map._currentStyle = s;
+                        container.querySelectorAll('div').forEach(d => {
+                            const ds = d.dataset.style;
+                            const isNowActive = ds === s;
+                            d.style.background = isNowActive ? 'rgba(62,207,142,0.2)' : 'transparent';
+                            d.style.borderColor = isNowActive ? '#3ecf8e' : 'transparent';
+                            d.style.color = isNowActive ? '#e2e8f0' : '#64748b';
+                            d.style.fontWeight = isNowActive ? '700' : '500';
+                        });
+                    };
+                });
+                L.DomEvent.disableClickPropagation(container);
+                return container;
+            };
+            basemapCtrl.addTo(map);
 
             _riverMap = map;
             _riverAllMarkers = L.layerGroup();

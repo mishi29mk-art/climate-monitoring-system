@@ -10,6 +10,10 @@ ExecStart=/root/workspace/climate_portal/venv/bin/python3 app.py
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
+Environment=JWT_SECRET=climate-jwt-secret-2026-secure-key
+Environment=ADMIN_PASS=admin123
+Environment=ANALYST_PASS=analyst123
+Environment=VIEWER_PASS=viewer123
 
 [Install]
 WantedBy=multi-user.target
