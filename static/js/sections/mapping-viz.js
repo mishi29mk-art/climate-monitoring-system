@@ -82,14 +82,14 @@ async function render_mapping_viz(el) {
                     <h3>🗺 Basemap Selector</h3>
                     <span class="badge b-info">${basemaps.length} Available</span>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
-                ${basemaps.map(b => {
+                <div id="basemap-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+                ${basemaps.map((b,i) => {
                     const selected = b.selected;
                     const style = selected
                         ? 'background:rgba(59,130,246,0.12);border-color:var(--accent);color:var(--accent-light)'
                         : '';
                     return `
-                    <div style="padding:12px 14px;background:var(--bg-secondary);border-radius:var(--r-md);border:1px solid var(--border);cursor:pointer;transition:all .15s;${style}">
+                    <div class="basemap-option" data-tile="${b.id}" data-idx="${i}" onclick="switchMapBasemap(this)" style="padding:12px 14px;background:var(--bg-secondary);border-radius:var(--r-md);border:1px solid var(--border);cursor:pointer;transition:all .15s;${style}">
                         <div style="font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px">
                             ${selected ? '✅' : '🗺'} ${b.name}
                         </div>
@@ -144,6 +144,7 @@ async function render_mapping_viz(el) {
             // Initialize Leaflet map preview
             try {
                 const map = initMap('map-viz-map', { zoom: 6, style: 'light' });
+                window._vizMap = map;
 
                 // Add layer markers for active layers
                 const layerColors = {
@@ -228,3 +229,51 @@ async function render_mapping_viz(el) {
         el.innerHTML = `<div class="loading">Error loading mapping data: ${e.message}</div>`;
     }
 }
+
+// ═══ Basemap Switching ═══════════════════════════════════════
+const TILE_URLS = {
+    dark: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+    satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    voyager: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    positron: 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+    darkLabels: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+};
+
+window._vizMap = null;
+window._vizBaseLayer = null;
+
+function switchMapBasemap(el) {
+    const tileId = el.getAttribute('data-tile');
+    if (!tileId || !window._vizMap) return;
+
+    // Remove ALL existing tile layers
+    const toRemove = [];
+    window._vizMap.eachLayer(layer => {
+        if (layer._url || layer instanceof L.TileLayer) toRemove.push(layer);
+    });
+    toRemove.forEach(l => window._vizMap.removeLayer(l));
+
+    // Add new tile layer
+    const url = TILE_URLS[tileId] || TILE_URLS.dark;
+    window._vizBaseLayer = L.tileLayer(url, { maxZoom: 18, subdomains: 'abcd' }).addTo(window._vizMap);
+
+    // Update UI selection state
+    document.querySelectorAll('.basemap-option').forEach(opt => {
+        opt.style.background = 'var(--bg-secondary)';
+        opt.style.borderColor = 'var(--border)';
+        opt.style.color = '';
+        const icon = opt.querySelector('div > div');
+        if (icon) icon.innerHTML = icon.innerHTML.replace('✅', '🗺');
+    });
+    el.style.background = 'rgba(59,130,246,0.12)';
+    el.style.borderColor = 'var(--accent)';
+    el.style.color = 'var(--accent-light)';
+    const iconEl = el.querySelector('div > div');
+    if (iconEl) iconEl.innerHTML = iconEl.innerHTML.replace('🗺', '✅');
+
+    // Update footer label
+    const footer = el.closest('.card')?.nextElementSibling;
+    // no-op — footer is outside this scope
+}
+

@@ -68,7 +68,7 @@ async function render_history(el) {
             if (tc && history.length > 0) {
                 const dates = history.map(h => h.date.substring(5));
                 const temps = history.map(h => h.avg_temp);
-                makeLine(tc.getContext('2d'), dates, temps, C.orange, 'Avg Temperature (°C)');
+                makeLine(tc.getContext('2d'), dates, [{data: temps, borderColor: C.orange, backgroundColor: C.orange + '20', label: 'Avg Temp (°C)', fill: true}], {beginAtZero: false});
             }
             const cc = document.getElementById('history-count-chart');
             if (cc && history.length > 0) {

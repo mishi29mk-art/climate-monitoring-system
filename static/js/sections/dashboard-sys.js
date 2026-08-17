@@ -5,10 +5,10 @@ async function render_dashboard_sys(el) {
         const res = await fetch('/api/modules/widgets');
         const d = await res.json();
 
-        const widgets = d.widgets || [];
-        const layout = d.layout || [];
-        const categories = [...new Set(widgets.map(w => w.category))].sort();
-        const sizes = [...new Set(widgets.map(w => w.size))].sort();
+        const widgets = d.available || d.widgets || [];
+        const layout = (d.layout || []).map(l => ({...l, widget_id: l.id || l.widget_id}));
+        const categories = [...new Set(widgets.map(w => w.category))].filter(Boolean).sort();
+        const sizes = [...new Set(widgets.map(w => w.size))].filter(Boolean).sort();
 
         const activeInLayout = new Set(layout.map(l => l.widget_id)).size;
         const sevCounts = {};
@@ -103,7 +103,7 @@ async function render_dashboard_sys(el) {
                     ${layout.length ? `
                         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
                             ${layout.map(l => {
-                                const w = widgets.find(x => x.id === l.widget_id) || {};
+                                const w = widgets.find(x => x.id === l.widget_id || x.id === l.id) || {};
                                 return `<div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;text-align:center;grid-column:span ${Math.min(4, parseInt(w.size)||1)}">
                                     <div style="font-size:20px;margin-bottom:4px">${w.icon || '📦'}</div>
                                     <div style="font-size:11px;font-weight:600">${w.name || l.widget_id}</div>

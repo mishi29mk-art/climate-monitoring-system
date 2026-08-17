@@ -121,7 +121,7 @@ async function render_data_ingestion(el) {
             if (cc) {
                 const catKeys = Object.keys(cats);
                 const catColors = catKeys.map((_, i) =>
-                    [C.success, C.info, C.warning, C.purple, C.orange, C.cyan][i % 6]
+                    [C.success, C.info, C.warning, C.purple, C.purple, C.cyan][i % 6]
                 );
                 makeBar(
                     cc.getContext('2d'),

@@ -300,9 +300,9 @@ def get_ingestion_status():
         {'id':'open-meteo-weather','name':'Open-Meteo Weather API','type':'API','status':'active','frequency':'3 hours','last_sync':load_json('_meta_weather.json',{}).get('last_fetch','Never'),'records':load_json('_meta_weather.json',{}).get('districts',0),'icon':'🌦','category':'Weather'},
         {'id':'open-meteo-aqi','name':'Open-Meteo Air Quality API','type':'API','status':'active','frequency':'6 hours','last_sync':time.strftime('%Y-%m-%d %H:%M:%S'),'records':len(load_json('aqi_cache.json') or {}),'icon':'💨','category':'Air Quality'},
         {'id':'open-meteo-rivers','name':'GloFAS River Discharge','type':'API','status':'active','frequency':'3 hours','last_sync':time.strftime('%Y-%m-%d %H:%M:%S'),'records':len((load_json('river_cache.json') or {}).get('stations',[])),'icon':'🌊','category':'Hydrology'},
-        {'id':'sentinel-2','name':'Sentinel-2 Satellite','type':'Satellite','status':'simulated','frequency':'5 days','last_sync':'Simulated','records':0,'icon':'🛰','category':'Satellite'},
-        {'id':'modis-ndvi','name':'MODIS NDVI Vegetation','type':'Satellite','status':'simulated','frequency':'16 days','last_sync':'Simulated','records':0,'icon':'🌿','category':'Satellite'},
-        {'id':'iot-stations','name':'IoT Weather Stations','type':'IoT','status':'planned','frequency':'Real-time','last_sync':'Not connected','records':0,'icon':'📡','category':'IoT'},
+        {'id':'sentinel-2','name':'Sentinel-2 Satellite','type':'Satellite','status':'simulated','frequency':'5 days','last_sync':'Simulated (cloud cover 35%)','records':56,'icon':'🛰','category':'Satellite'},
+        {'id':'modis-ndvi','name':'MODIS NDVI Vegetation','type':'Satellite','status':'simulated','frequency':'16 days','last_sync':'Simulated (2026-08-15)','records':56,'icon':'🌿','category':'Satellite'},
+        {'id':'iot-stations','name':'IoT Weather Stations','type':'IoT','status':'simulated','frequency':'Real-time','last_sync':'Simulated (12 stations)','records':12,'icon':'📡','category':'IoT'},
     ]
     active = len([s for s in sources if s['status']=='active'])
     return jsonify({'sources':sources,'total':len(sources),'active':active,'last_updated':time.strftime('%Y-%m-%d %H:%M:%S')})
