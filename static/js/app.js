@@ -133,7 +133,7 @@ function loadSectionScript(id) {
     return new Promise((resolve, reject) => {
         if (_loadedSections.has(id)) { resolve(); return; }
         const script = document.createElement('script');
-        script.src = `/static/js/sections/${id}.js?v=70`;
+        script.src = `/static/js/sections/${id}.js?v=71`;
         script.onload = () => { _loadedSections.add(id); resolve(); };
         script.onerror = () => reject(new Error(`Failed to load ${id}.js`));
         document.body.appendChild(script);

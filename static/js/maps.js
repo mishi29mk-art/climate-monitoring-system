@@ -70,6 +70,46 @@ function initMap(id, opts = {}) {
     map._currentTile = tileLayer;
     map._currentStyle = style;
 
+    // Add basemap switcher control — popup with 5 options
+    const basemapCtrl = L.control({ position: 'topright' });
+    basemapCtrl.onAdd = function() {
+        const container = L.DomUtil.create('div', 'basemap-selector');
+        container.style.cssText = 'background:rgba(15,23,42,0.95);border-radius:8px;padding:4px;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-family:Inter,system-ui,sans-serif;position:relative;';
+        
+        const activeBtn = L.DomUtil.create('div', '', container);
+        activeBtn.style.cssText = 'padding:6px 10px;color:#e2e8f0;font-size:11px;font-weight:600;cursor:pointer;text-align:center;border-radius:6px;transition:background 0.15s;';
+        activeBtn.textContent = MAP_STYLES[style]?.name || '🗺 Map';
+        activeBtn.id = 'bm-map-' + id;
+        
+        const dropdown = L.DomUtil.create('div', '', container);
+        dropdown.style.cssText = 'display:none;position:absolute;top:100%;right:0;margin-top:4px;background:rgba(15,23,42,0.95);border-radius:8px;padding:4px;min-width:120px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.4);';
+        
+        const styles = ['terrain', 'satellite', 'voyager', 'light', 'dark'];
+        styles.forEach(s => {
+            const opt = L.DomUtil.create('div', '', dropdown);
+            opt.style.cssText = 'padding:6px 10px;color:#94a3b8;font-size:11px;cursor:pointer;border-radius:4px;transition:all 0.15s;white-space:nowrap;';
+            opt.textContent = MAP_STYLES[s]?.name || s;
+            if (s === style) { opt.style.color = '#3b82f6'; opt.style.fontWeight = '700'; }
+            opt.onmouseenter = () => { opt.style.background = 'rgba(59,130,246,0.15)'; opt.style.color = '#e2e8f0'; };
+            opt.onmouseleave = () => { opt.style.background = 'transparent'; opt.style.color = s === style ? '#3b82f6' : '#94a3b8'; };
+            opt.onclick = (e) => {
+                e.stopPropagation();
+                switchMapStyle(map, s);
+                document.getElementById('bm-map-' + id).textContent = MAP_STYLES[s]?.name || s;
+                dropdown.querySelectorAll('div').forEach(d => { d.style.color = '#94a3b8'; d.style.fontWeight = '400'; });
+                opt.style.color = '#3b82f6';
+                opt.style.fontWeight = '700';
+                dropdown.style.display = 'none';
+            };
+        });
+        
+        activeBtn.onclick = (e) => { e.stopPropagation(); dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none'; };
+        document.addEventListener('click', () => { dropdown.style.display = 'none'; });
+        L.DomEvent.disableClickPropagation(container);
+        return container;
+    };
+    basemapCtrl.addTo(map);
+
     return map;
 }
 
@@ -79,7 +119,10 @@ function switchMapStyle(map, styleName) {
     if (!tileConfig || !map) return;
 
     if (map._currentTile) map.removeLayer(map._currentTile);
-    map._currentTile = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
+    // Override subdomains for satellite (no subdomains needed)
+    const opts = {...tileConfig.options};
+    if (styleName === 'satellite') { opts.subdomains = []; }
+    map._currentTile = L.tileLayer(tileConfig.url, opts).addTo(map);
     map._currentStyle = styleName;
 }
 

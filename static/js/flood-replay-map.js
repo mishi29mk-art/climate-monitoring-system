@@ -2,17 +2,19 @@
 // Consistent map style with light/dark mode support
 
 const FLOOD_TILE_URLS = {
-    dark: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+    voyager: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    dark: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
 };
 
 const FLOOD_TILE_NAMES = {
-    dark: '🌙 Dark',
-    light: '☀ Light',
+    terrain: '🗺 Terrain',
     satellite: '🛰 Satellite',
-    terrain: '🗺 Terrain'
+    voyager: '🎨 Voyager',
+    light: '☀ Light',
+    dark: '🌙 Dark'
 };
 
 function initFloodReplayMap(containerId, options = {}) {
@@ -42,54 +44,96 @@ function initFloodReplayMap(containerId, options = {}) {
     map._floodTileLayer = currentTile;
     map._floodTileStyle = tileStyle;
 
-    // Add basemap switcher control
-    const basemapBtn = L.control({ position: 'topright' });
-    basemapBtn.onAdd = function() {
-        const btn = L.DomUtil.create('div', 'basemap-switcher');
-        btn.innerHTML = '<button class="basemap-btn" onclick="cycleFloodMapBasemap(this)" title="Switch basemap">' +
-            FLOOD_TILE_NAMES[tileStyle] + '</button>';
-        L.DomEvent.disableClickPropagation(btn);
-        return btn;
+    // Add basemap switcher control — popup with 5 options
+    const basemapCtrl = L.control({ position: 'topright' });
+    basemapCtrl.onAdd = function() {
+        const container = L.DomUtil.create('div', 'basemap-selector');
+        container.style.cssText = 'background:rgba(15,23,42,0.95);border-radius:8px;padding:4px;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-family:Inter,system-ui,sans-serif;';
+        
+        // Active button showing current style
+        const activeBtn = L.DomUtil.create('div', '', container);
+        activeBtn.style.cssText = 'padding:6px 10px;color:#e2e8f0;font-size:11px;font-weight:600;cursor:pointer;text-align:center;border-radius:6px;transition:background 0.15s;';
+        activeBtn.textContent = FLOOD_TILE_NAMES[tileStyle];
+        activeBtn.id = 'bm-active-' + containerId;
+        
+        // Dropdown container (hidden by default)
+        const dropdown = L.DomUtil.create('div', '', container);
+        dropdown.style.cssText = 'display:none;position:absolute;top:100%;right:0;margin-top:4px;background:rgba(15,23,42,0.95);border-radius:8px;padding:4px;min-width:120px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.4);';
+        
+        const styles = ['terrain', 'satellite', 'voyager', 'light', 'dark'];
+        styles.forEach(s => {
+            const opt = L.DomUtil.create('div', '', dropdown);
+            opt.style.cssText = 'padding:6px 10px;color:#94a3b8;font-size:11px;cursor:pointer;border-radius:4px;transition:all 0.15s;white-space:nowrap;';
+            opt.textContent = FLOOD_TILE_NAMES[s];
+            if (s === tileStyle) { opt.style.color = '#3b82f6'; opt.style.fontWeight = '700'; }
+            opt.onmouseenter = () => { opt.style.background = 'rgba(59,130,246,0.15)'; opt.style.color = '#e2e8f0'; };
+            opt.onmouseleave = () => { opt.style.background = 'transparent'; opt.style.color = s === tileStyle ? '#3b82f6' : '#94a3b8'; };
+            opt.onclick = (e) => {
+                e.stopPropagation();
+                switchFloodMapTile(map, s);
+                // Update active button
+                document.getElementById('bm-active-' + containerId).textContent = FLOOD_TILE_NAMES[s];
+                // Update dropdown highlights
+                dropdown.querySelectorAll('div').forEach(d => {
+                    d.style.color = '#94a3b8';
+                    d.style.fontWeight = '400';
+                });
+                opt.style.color = '#3b82f6';
+                opt.style.fontWeight = '700';
+                dropdown.style.display = 'none';
+            };
+        });
+        
+        // Toggle dropdown on click
+        activeBtn.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        };
+        
+        // Close dropdown on outside click
+        document.addEventListener('click', () => { dropdown.style.display = 'none'; });
+        
+        L.DomEvent.disableClickPropagation(container);
+        return container;
     };
-    basemapBtn.addTo(map);
+    basemapCtrl.addTo(map);
 
     return map;
 }
 
-function cycleFloodMapBasemap(btn) {
-    const map = btn.closest('.leaflet-container') || btn.parentElement?.parentElement;
-    if (!map || !map._leaflet_id) return;
-
-    // Find the actual Leaflet map instance
-    let leafletMap = null;
-    document.querySelectorAll('.leaflet-container').forEach(el => {
-        if (el._leaflet_id && el._floodTileLayer) {
-            leafletMap = el;
-        }
-    });
-
-    if (!leafletMap) return;
-
-    const currentStyle = leafletMap._floodTileStyle;
-    const styles = ['terrain', 'satellite', 'light', 'dark'];
-    const nextIdx = (styles.indexOf(currentStyle) + 1) % styles.length;
-    const nextStyle = styles[nextIdx];
-
+function switchFloodMapTile(map, styleName) {
+    if (!map || !FLOOD_TILE_URLS[styleName]) return;
+    
     // Remove current tiles
-    leafletMap.removeLayer(leafletMap._floodTileLayer);
-
-    // Add new tiles
-    const subdomains = nextStyle === 'satellite' ? [] : (nextStyle === 'terrain' ? 'abc' : 'abcd');
-    const attribution = nextStyle === 'satellite' ? '© Esri' : (nextStyle === 'terrain' ? '© OpenTopoMap' : '© CartoDB');
-
-    leafletMap._floodTileLayer = L.tileLayer(FLOOD_TILE_URLS[nextStyle], {
+    if (map._floodTileLayer) map.removeLayer(map._floodTileLayer);
+    
+    // Determine subdomains and attribution
+    const subdomains = styleName === 'satellite' ? [] : (styleName === 'terrain' ? 'abc' : (styleName === 'voyager' ? 'abcd' : 'abcd'));
+    const attribution = styleName === 'satellite' ? '© Esri' : (styleName === 'terrain' ? '© OpenTopoMap' : '© CartoDB');
+    
+    // Add new tile layer
+    map._floodTileLayer = L.tileLayer(FLOOD_TILE_URLS[styleName], {
         maxZoom: 18,
         subdomains: subdomains,
         attribution: attribution
-    }).addTo(leafletMap);
+    }).addTo(map);
+    
+    map._floodTileStyle = styleName;
+}
 
-    leafletMap._floodTileStyle = nextStyle;
-    btn.textContent = FLOOD_TILE_NAMES[nextStyle];
+function cycleFloodMapBasemap(btn) {
+    // Legacy function — find map and cycle to next style
+    const containers = document.querySelectorAll('.leaflet-container');
+    let leafletMap = null;
+    containers.forEach(el => {
+        if (el._leaflet_id && el._floodTileLayer) leafletMap = el;
+    });
+    if (!leafletMap) return;
+    
+    const styles = ['terrain', 'satellite', 'voyager', 'light', 'dark'];
+    const nextIdx = (styles.indexOf(leafletMap._floodTileStyle) + 1) % styles.length;
+    switchFloodMapTile(leafletMap, styles[nextIdx]);
+    btn.textContent = FLOOD_TILE_NAMES[styles[nextIdx]];
 }
 
 function addStationNode(map, lat, lng, name, color, size, discharge, basin) {

@@ -106,8 +106,8 @@ async function render_dashboard_sys(el) {
                                 const w = widgets.find(x => x.id === l.widget_id || x.id === l.id) || {};
                                 return `<div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;text-align:center;grid-column:span ${Math.min(4, parseInt(w.size)||1)}">
                                     <div style="font-size:20px;margin-bottom:4px">${w.icon || '📦'}</div>
-                                    <div style="font-size:11px;font-weight:600">${w.name || l.widget_id}</div>
-                                    <div style="font-size:10px;color:var(--text-muted)">R${l.row||'?'} C${l.col||'?'} · ${w.size || '1x1'}</div>
+                                    <div style="font-size:11px;font-weight:600">${w.name || l.widget_id || 'Widget'}</div>
+                                    <div style="font-size:10px;color:var(--text-muted)">R${l.row != null ? l.row : '?'} C${l.col != null ? l.col : '?'} · ${w.size || '1x1'}</div>
                                 </div>`;
                             }).join('')}
                         </div>
