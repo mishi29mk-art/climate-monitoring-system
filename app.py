@@ -112,12 +112,58 @@ def cache_response(data, max_age=300):
     return resp
 
 # ─── Weather (all climate parameters) ───────────────────────────────
+# Cache for optimized weather data
+_optimized_weather_cache = None
+_optimized_weather_time = 0
+
+def get_optimized_weather():
+    """Return lightweight weather data (current only, no hourly/daily forecast)"""
+    global _optimized_weather_cache, _optimized_weather_time
+    
+    # Return cached if fresh (5 min)
+    if _optimized_weather_cache and time.time() - _optimized_weather_time < 300:
+        return _optimized_weather_cache
+    
+    d = load_json('weather_cache.json')
+    if not d:
+        return None
+    
+    optimized = {}
+    for district, info in d.items():
+        forecast = info.get('forecast', {})
+        current = forecast.get('current_weather', {})
+        
+        # Extract only what the frontend needs
+        optimized[district] = {
+            'province': info.get('province'),
+            'lat': info.get('lat'),
+            'lng': info.get('lng'),
+            'population': info.get('population'),
+            'current': {
+                'temperature': current.get('temperature'),
+                'windspeed': current.get('windspeed'),
+                'weathercode': current.get('weathercode'),
+                'winddirection': current.get('winddirection'),
+            },
+            # Daily summary for 7-day forecast
+            'daily': {
+                'time': forecast.get('daily', {}).get('time', [])[:7],
+                'temperature_2m_max': forecast.get('daily', {}).get('temperature_2m_max', [])[:7],
+                'temperature_2m_min': forecast.get('daily', {}).get('temperature_2m_min', [])[:7],
+                'precipitation_sum': forecast.get('daily', {}).get('precipitation_sum', [])[:7],
+            }
+        }
+    
+    _optimized_weather_cache = optimized
+    _optimized_weather_time = time.time()
+    return optimized
+
 @app.route('/api/weather/all')
 @rate_limit
 def get_all_weather():
-    d = load_json('weather_cache.json')
+    d = get_optimized_weather()
     if d:
-        return cache_response(d, 600)  # 10 min cache
+        return cache_response(d, 300)  # 5 min cache
     return jsonify({'error': 'No weather data yet. Run fetch_weather.py'}), 404
 
 @app.route('/api/weather/<name>')
@@ -136,12 +182,51 @@ def get_weather(name):
     return jsonify({'error': f'No weather data for {validated}'}), 404
 
 # ─── Air Quality ────────────────────────────────────────────────────
+# Cache for optimized AQI data
+_optimized_aqi_cache = None
+_optimized_aqi_time = 0
+
+def get_optimized_aqi():
+    """Return lightweight AQI data (current only, no hourly data)"""
+    global _optimized_aqi_cache, _optimized_aqi_time
+    
+    # Return cached if fresh (5 min)
+    if _optimized_aqi_cache and time.time() - _optimized_aqi_time < 300:
+        return _optimized_aqi_cache
+    
+    d = load_json('aqi_cache.json')
+    if not d:
+        return None
+    
+    optimized = {}
+    for district, info in d.items():
+        hourly = info.get('hourly', {})
+        stats = info.get('stats', {})
+        
+        # Extract only current AQI and stats
+        optimized[district] = {
+            'province': info.get('province'),
+            'lat': info.get('lat'),
+            'lng': info.get('lng'),
+            'current': {
+                'us_aqi': hourly.get('us_aqi', [None])[-1] if hourly.get('us_aqi') else None,
+                'pm2_5': hourly.get('pm2_5', [None])[-1] if hourly.get('pm2_5') else None,
+                'pm10': hourly.get('pm10', [None])[-1] if hourly.get('pm10') else None,
+                'ozone': hourly.get('ozone', [None])[-1] if hourly.get('ozone') else None,
+            },
+            'stats': stats
+        }
+    
+    _optimized_aqi_cache = optimized
+    _optimized_aqi_time = time.time()
+    return optimized
+
 @app.route('/api/aqi/all')
 @rate_limit
 def get_all_aqi():
-    d = load_json('aqi_cache.json')
+    d = get_optimized_aqi()
     if d:
-        return cache_response(d, 600)
+        return cache_response(d, 300)
     return jsonify({'error': 'No AQI data yet. Run fetch_aqi.py'}), 404
 
 @app.route('/api/aqi/<name>')
@@ -191,22 +276,34 @@ def get_district_normals(name):
     return jsonify({'error': f'No normals for {validated}'}), 404
 
 # ─── Alerts ─────────────────────────────────────────────────────────
+# Cache for alerts
+_alerts_cache = None
+_alerts_cache_time = 0
+
 @app.route('/api/alerts')
 @rate_limit
 def get_alerts():
+    global _alerts_cache, _alerts_cache_time
+    
+    # Return cached if fresh (2 min)
+    if _alerts_cache and time.time() - _alerts_cache_time < 120:
+        return cache_response(_alerts_cache, 120)
+    
     alerts = generate_alerts()
-    return cache_response(alerts, 120)  # 2 min cache
+    _alerts_cache = alerts
+    _alerts_cache_time = time.time()
+    return cache_response(alerts, 120)
 
 def generate_alerts():
     """Generate alerts from current weather + AQI data."""
     alerts = []
-    weather = load_json('weather_cache.json') or {}
-    aqi_cache = load_json('aqi_cache.json') or {}
+    weather = get_optimized_weather() or {}
+    aqi_cache = get_optimized_aqi() or {}
     rivers = load_json('river_cache.json') or {}
 
     # Temperature alerts
     for name, data in weather.items():
-        daily = data.get('forecast', {}).get('daily', {})
+        daily = data.get('daily', {})
         temps = daily.get('temperature_2m_max', [])
         if temps:
             max_t = max(temps)
@@ -228,36 +325,17 @@ def generate_alerts():
             elif max_rain >= 30:
                 alerts.append({'type': 'heavy_rain', 'severity': 'moderate', 'district': name, 'province': data.get('province',''), 'value': max_rain, 'message': f'Moderate rainfall: {max_rain:.0f}mm forecast', 'icon': '🌧'})
 
-        # Wind alerts
-        gusts = daily.get('wind_gusts_10m_max', [])
-        if gusts:
-            max_gust = max(gusts)
-            if max_gust >= 80:
-                alerts.append({'type': 'wind', 'severity': 'extreme', 'district': name, 'province': data.get('province',''), 'value': max_gust, 'message': f'Extreme wind gusts: {max_gust}km/h', 'icon': '💨'})
-            elif max_gust >= 60:
-                alerts.append({'type': 'wind', 'severity': 'severe', 'district': name, 'province': data.get('province',''), 'value': max_gust, 'message': f'Strong wind gusts: {max_gust}km/h', 'icon': '💨'})
-
-        # UV alerts
-        uv = daily.get('uv_index_max', [])
-        if uv:
-            max_uv = max(uv)
-            if max_uv >= 11:
-                alerts.append({'type': 'uv', 'severity': 'extreme', 'district': name, 'province': data.get('province',''), 'value': max_uv, 'message': f'Extreme UV index: {max_uv}', 'icon': '☀'})
-            elif max_uv >= 8:
-                alerts.append({'type': 'uv', 'severity': 'severe', 'district': name, 'province': data.get('province',''), 'value': max_uv, 'message': f'Very high UV: {max_uv}', 'icon': '☀'})
-
     # AQI alerts
     for name, data in aqi_cache.items():
-        hourly = data.get('hourly', {})
-        aqi_vals = hourly.get('european_aqi', [])
-        if aqi_vals:
-            max_aqi = max(v for v in aqi_vals if v is not None) if any(v is not None for v in aqi_vals) else 0
-            if max_aqi >= 200:
-                alerts.append({'type': 'aqi', 'severity': 'extreme', 'district': name, 'province': data.get('province',''), 'value': max_aqi, 'message': f'Severe air pollution: AQI {max_aqi}', 'icon': '💨'})
-            elif max_aqi >= 150:
-                alerts.append({'type': 'aqi', 'severity': 'severe', 'district': name, 'province': data.get('province',''), 'value': max_aqi, 'message': f'Unhealthy air: AQI {max_aqi}', 'icon': '💨'})
-            elif max_aqi >= 100:
-                alerts.append({'type': 'aqi', 'severity': 'moderate', 'district': name, 'province': data.get('province',''), 'value': max_aqi, 'message': f'Moderate pollution: AQI {max_aqi}', 'icon': '💨'})
+        current = data.get('current', {})
+        aqi_val = current.get('us_aqi')
+        if aqi_val:
+            if aqi_val >= 200:
+                alerts.append({'type': 'aqi', 'severity': 'extreme', 'district': name, 'province': data.get('province',''), 'value': aqi_val, 'message': f'Severe air pollution: AQI {aqi_val}', 'icon': '💨'})
+            elif aqi_val >= 150:
+                alerts.append({'type': 'aqi', 'severity': 'severe', 'district': name, 'province': data.get('province',''), 'value': aqi_val, 'message': f'Unhealthy air: AQI {aqi_val}', 'icon': '💨'})
+            elif aqi_val >= 100:
+                alerts.append({'type': 'aqi', 'severity': 'moderate', 'district': name, 'province': data.get('province',''), 'value': aqi_val, 'message': f'Moderate pollution: AQI {aqi_val}', 'icon': '💨'})
 
     # River discharge alerts
     if isinstance(rivers, dict):
@@ -274,28 +352,36 @@ def generate_alerts():
     return alerts
 
 # ─── Dashboard Summary ──────────────────────────────────────────────
+# Cache for summary
+_summary_cache = None
+_summary_cache_time = 0
+
 @app.route('/api/summary')
+@rate_limit
 def get_summary():
-    weather = load_json('weather_cache.json') or {}
-    aqi = load_json('aqi_cache.json') or {}
+    global _summary_cache, _summary_cache_time
+    
+    # Return cached if fresh (2 min)
+    if _summary_cache and time.time() - _summary_cache_time < 120:
+        return jsonify(_summary_cache)
+    
+    weather = get_optimized_weather() or {}
+    aqi = get_optimized_aqi() or {}
     rivers = load_json('river_cache.json') or {}
     alerts = generate_alerts()
-    # Return cached response if same data
-
+    
     # Compute summary stats
     hottest = {'district': '-', 'temp': 0}
     wettest = {'district': '-', 'rain': 0}
     worst_aqi = {'district': '-', 'aqi': 0}
-    driest = {'district': '-', 'soil': 999}
     highest_river = {'station': '-', 'discharge': 0}
     total_alerts = len(alerts)
     extreme_alerts = len([a for a in alerts if a['severity'] == 'extreme'])
 
     for name, data in weather.items():
-        daily = data.get('forecast', {}).get('daily', {})
+        daily = data.get('daily', {})
         temps = daily.get('temperature_2m_max', [])
         rain = daily.get('precipitation_sum', [])
-        soil = daily.get('soil_moisture_0_to_7cm_mean', []) if 'soil_moisture_0_to_7cm_mean' in daily else []
 
         if temps:
             mt = max(temps)
@@ -307,20 +393,17 @@ def get_summary():
                 wettest = {'district': name, 'rain': tr, 'province': data.get('province','')}
 
     for name, data in aqi.items():
-        hourly = data.get('hourly', {})
-        vals = hourly.get('european_aqi', [])
-        valid = [v for v in vals if v is not None]
-        if valid:
-            ma = max(valid)
-            if ma > worst_aqi['aqi']:
-                worst_aqi = {'district': name, 'aqi': ma, 'province': data.get('province','')}
+        current = data.get('current', {})
+        aqi_val = current.get('us_aqi')
+        if aqi_val and aqi_val > worst_aqi['aqi']:
+            worst_aqi = {'district': name, 'aqi': aqi_val, 'province': data.get('province','')}
 
     if isinstance(rivers, dict):
         for s in rivers.get('stations', []):
             if s.get('discharge', 0) > highest_river['discharge']:
                 highest_river = {'station': s.get('name',''), 'discharge': s['discharge']}
 
-    return jsonify({
+    result = {
         'hottest': hottest,
         'wettest': wettest,
         'worst_aqi': worst_aqi,
@@ -328,18 +411,12 @@ def get_summary():
         'districts_monitored': len(weather),
         'total_alerts': total_alerts,
         'extreme_alerts': extreme_alerts,
-        'data_freshness': load_json('_meta.json', ) or {'last_fetch': 'Never'},
-    })
-
-def load_json(name, default=None):
-    path = os.path.join(DATA, name)
-    if os.path.exists(path):
-        try:
-            with open(path) as f:
-                return json.load(f)
-        except:
-            return default
-    return default
+        'data_freshness': load_json('_meta.json') or {'last_fetch': 'Never'},
+    }
+    
+    _summary_cache = result
+    _summary_cache_time = time.time()
+    return jsonify(result)
 
 # ─── Data Fetching Jobs ─────────────────────────────────────────────
 def fetch_weather_job():
