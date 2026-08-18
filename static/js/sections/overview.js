@@ -25,11 +25,7 @@ function render_overview(el) {
         <div class="pipeline-step"><div class="step-num">3</div><div class="step-title">Predict</div><div class="step-desc">7-day forecasts, trend analysis, anomaly detection</div></div>
         <div class="pipeline-step"><div class="step-num">4</div><div class="step-title">Warn</div><div class="step-desc">Auto alerts by severity — heat, rain, AQI, flood, UV</div></div>
     </div>
-    <div class="card-grid g3">
-        <div class="card"><h3 style="margin-bottom:10px">🔥 Temperature (Top 10)</h3><div style="height:180px"><canvas id="ov-temp"></canvas></div></div>
-        <div class="card"><h3 style="margin-bottom:10px">🌧 Rainfall 7-Day (Top 10)</h3><div style="height:180px"><canvas id="ov-rain"></canvas></div></div>
-        <div class="card"><h3 style="margin-bottom:10px">💨 AQI (Top 10)</h3><div style="height:180px"><canvas id="ov-aqi"></canvas></div></div>
-    </div>
+    <div class="card-grid g3" id="ov-top3"></div>
 
     <!-- Time-Series Charts with Day/Week/Month Toggles -->
     <div class="card-grid g3 mt-3">
@@ -52,93 +48,144 @@ function render_overview(el) {
 
     <div class="card-grid g2 mt-3">
         <div class="card"><h3 style="margin-bottom:10px">🚨 Active Alerts (${alerts.length})</h3><div class="tbl-scroll" style="max-height:260px"><table class="tbl"><thead><tr><th></th><th>Type</th><th>District</th><th>Severity</th><th>Value</th></tr></thead><tbody>
-        ${alerts.slice(0,15).map(a=>`<tr><td>${a.icon||''}</td><td>${a.type.replace(/_/g,' ')}</td><td>${a.district}</td><td>${severityBadge(a.severity)}</td><td>${fmt(a.value,0)}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No active alerts ✅</td></tr>'}
+        ${alerts.slice(0,15).map(a=>`<tr><td>${a.icon||''}</td><td>${a.type.replace(/_/g,' ')}</td><td>${a.district}</td><td>${severityBadge(a.severity)}</td><td>${fmt(a.value,0)}</td></tr>`).join('')||'<tr><td colspan=\"5\" style=\"text-align:center;color:var(--text-muted)\">No active alerts ✅</td></tr>'}
         </tbody></table></div></div>
         <div class="card"><h3 style="margin-bottom:10px">🌡 Top 10 Hottest Districts</h3><div class="tbl-scroll" style="max-height:260px"><table class="tbl"><thead><tr><th>District</th><th>Province</th><th>Max Temp</th></tr></thead><tbody>
-        ${Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0)).slice(0,10).map(([n,d])=>`<tr><td>${n}</td><td>${d.province}</td><td style="color:${tempColor(d.stats?.temp_max_7d)}"><b>${fmtC(d.stats?.temp_max_7d)}</b></td></tr>`).join('')}
+        ${Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0)).slice(0,10).map(([n,d])=>`<tr><td>${n}</td><td>${d.province}</td><td style=\"color:${tempColor(d.stats?.temp_max_7d)}\"><b>${fmtC(d.stats?.temp_max_7d)}</b></td></tr>`).join('')}
         </tbody></table></div></div>
     </div>
 
-    <!-- 💧 Humidity & Wind Speed Charts -->
-    <div class="card-grid g3 mt-3">
-        <div class="card"><h3 style="margin-bottom:10px">💧 Humidity Range (Top 10)</h3><div style="height:180px"><canvas id="ov-hum-high"></canvas></div></div>
-        <div class="card"><h3 style="margin-bottom:10px">🌬 Wind Speed (Top 10)</h3><div style="height:180px"><canvas id="ov-wind"></canvas></div></div>
-        <div class="card"><h3 style="margin-bottom:10px">❄ Coldest vs Warmest (Top 10)</h3><div style="height:180px"><canvas id="ov-cold-warm"></canvas></div></div>
-    </div>
+    <!-- Below-fold charts -->
+    <div class="card-grid g3 mt-3" id="ov-below3"></div>
 
     <!-- Cold/Warm City Tables -->
     <div class="card-grid g2 mt-3">
         <div class="card"><h3 style="margin-bottom:10px">❄ Top 10 Coldest Cities</h3><div class="tbl-scroll" style="max-height:220px"><table class="tbl"><thead><tr><th>District</th><th>Province</th><th>Min Temp</th></tr></thead><tbody>
-        ${Object.entries(weatherData).sort((a,b)=>(a[1].stats?.temp_min_7d||99)-(b[1].stats?.temp_min_7d||99)).slice(0,10).map(([n,d])=>`<tr><td>${n}</td><td>${d.province}</td><td style="color:${d.stats?.temp_min_7d<15?'#60a5fa':'#fbbf24'}"><b>${fmtC(d.stats?.temp_min_7d)}</b></td></tr>`).join('')}
+        ${Object.entries(weatherData).sort((a,b)=>(a[1].stats?.temp_min_7d||99)-(b[1].stats?.temp_min_7d||99)).slice(0,10).map(([n,d])=>`<tr><td>${n}</td><td>${d.province}</td><td style=\"color:${d.stats?.temp_min_7d<15?'#a78bfa':'#fbbf24'}\"><b>${fmtC(d.stats?.temp_min_7d)}</b></td></tr>`).join('')}
         </tbody></table></div></div>
         <div class="card"><h3 style="margin-bottom:10px">🔥 Top 10 Warmest Cities</h3><div class="tbl-scroll" style="max-height:220px"><table class="tbl"><thead><tr><th>District</th><th>Province</th><th>Max Temp</th></tr></thead><tbody>
-        ${Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0)).slice(0,10).map(([n,d])=>`<tr><td>${n}</td><td>${d.province}</td><td style="color:${tempColor(d.stats?.temp_max_7d)}"><b>${fmtC(d.stats?.temp_max_7d)}</b></td></tr>`).join('')}
+        ${Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0)).slice(0,10).map(([n,d])=>`<tr><td>${n}</td><td>${d.province}</td><td style=\"color:${tempColor(d.stats?.temp_max_7d)}\"><b>${fmtC(d.stats?.temp_max_7d)}</b></td></tr>`).join('')}
         </tbody></table></div></div>
     </div>`;
-    setTimeout(()=>{
-        const t10=Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0)).slice(0,10);
-        const tc=document.getElementById('ov-temp'); if(tc) makeBar(tc.getContext('2d'),t10.map(([n])=>n.substring(0,6)),t10.map(([,d])=>d.stats?.temp_max_7d||0),t10.map(([,d])=>tempColor(d.stats?.temp_max_7d)),{barThickness:14});
-        const r10=Object.entries(weatherData).sort((a,b)=>(b[1].stats?.rain_total_7d||0)-(a[1].stats?.rain_total_7d||0)).slice(0,10);
-        const rc=document.getElementById('ov-rain'); if(rc) makeBar(rc.getContext('2d'),r10.map(([n])=>n.substring(0,6)),r10.map(([,d])=>d.stats?.rain_total_7d||0),r10.map(([,d])=>rainColor(d.stats?.rain_total_7d)),{barThickness:14});
-        const a10=Object.entries(aqiData).filter(([,d])=>d.stats).sort((a,b)=>(b[1].stats?.aqi_max||0)-(a[1].stats?.aqi_max||0)).slice(0,10);
-        const ac=document.getElementById('ov-aqi'); if(ac) makeBar(ac.getContext('2d'),a10.map(([n])=>n.substring(0,6)),a10.map(([,d])=>d.stats?.aqi_max||0),a10.map(([,d])=>aqiColor(d.stats?.aqi_max)),{barThickness:14});
-        // Initialize time-series charts with day/week/month toggles
-        initTimeSeriesCharts();
 
-    },300);
-    // Render below-fold charts (global for scroll listener)
-    window._renderOverviewBelowFold = function(){
-        const hc2=document.getElementById('ov-hum-high');
-        if(hc2 && !hc2._rendered){
-            const h10=Object.entries(weatherData).map(([n,d])=>{
-                const hum=d.forecast?.hourly?.relative_humidity_2m;
-                if(!hum||!hum.length) return null;
-                const min=Math.min(...hum), max=Math.max(...hum), avg=Math.round(hum.reduce((a,b)=>a+b,0)/hum.length);
-                return {name:n,min,max,avg,range:max-min};
-            }).filter(Boolean).sort((a,b)=>b.range-a.range).slice(0,10);
-            destroyChart('ov-hum-high');
-            chartInstances['ov-hum-high'] = new Chart(hc2.getContext('2d'), {
-                type: 'bar',
-                data: { labels: h10.map(d=>d.name.substring(0,8)), datasets: [{
-                    label: 'Humidity Range (min–max)',
-                    data: h10.map(d=>[d.min, d.max]),
-                    backgroundColor: h10.map(d=>d.range>50?'#f97316':d.range>30?'#eab308':'#3b82f6'),
-                    borderRadius:4, barThickness:14
-                }] },
-                options: { responsive:true, maintainAspectRatio:false, plugins:{
-                    legend:{display:false},
-                    tooltip:{callbacks:{label:ctx=>{const v=ctx.raw; return v[0]+'% – '+v[1]+'% (avg '+h10[ctx.dataIndex].avg+'%)';}}}
-                }, scales:{x:{grid:{display:false}},y:{beginAtZero:true, max:100, ticks:{callback:v=>v+'%'}}} }
-            });
-            hc2._rendered=true;
-        }
-        const wc2=document.getElementById('ov-wind');
-        if(wc2 && !wc2._rendered){
-            const w10=Object.entries(weatherData).map(([n,d])=>{
-                const ws=d.forecast?.hourly?.wind_speed_10m;
-                const maxW=ws&&ws.length?Math.round(Math.max(...ws)):0;
-                return {name:n,wind:maxW};
-            }).filter(d=>d.wind>0).sort((a,b)=>b.wind-a.wind).slice(0,10);
-            makeBar(wc2.getContext('2d'),w10.map(d=>d.name.substring(0,6)),w10.map(d=>d.wind),w10.map(d=>d.wind>40?'#ef4444':d.wind>25?'#f59e0b':'#22c55e'),{barThickness:14});
-            wc2._rendered=true;
-        }
-        const cwc2=document.getElementById('ov-cold-warm');
-        if(cwc2 && !cwc2._rendered){
-            const sorted2=Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0));
-            const cold5b=sorted2.slice(-5).reverse();
-            const warm5b=sorted2.slice(0,5);
-            makeBar(cwc2.getContext('2d'),
-                [...cold5b.map(([n])=>n.substring(0,5)),...warm5b.map(([n])=>n.substring(0,5))],
-                [...cold5b.map(([,d])=>d.stats?.temp_min_7d||0),...warm5b.map(([,d])=>d.stats?.temp_max_7d||0)],
-                [...cold5b.map(()=>'#60a5fa'),...warm5b.map(()=>'#ef4444')],
-                {barThickness:12});
-            cwc2._rendered=true;
-        }
-    }
-    // Use multiple strategies to ensure charts render
+    setTimeout(()=>{ renderTopRankings(); initTimeSeriesCharts(); },300);
+    // Render below-fold charts
+    window._renderOverviewBelowFold = function(){ renderBelowFoldCharts(); };
     window._renderOverviewBelowFold();
     setTimeout(window._renderOverviewBelowFold, 500);
     setTimeout(window._renderOverviewBelowFold, 1500);
     window.addEventListener('scroll', window._renderOverviewBelowFold, {once:true});
     window.addEventListener('resize', window._renderOverviewBelowFold, {once:true});
+}
+
+/* ─── Horizontal Progress Bar Ranking ───────────────────── */
+function makeRanking(container, title, emoji, items, colorFn, unit, maxVal) {
+    if (!items.length) return;
+    const mx = maxVal || Math.max(...items.map(d=>d.value)) || 1;
+    container.innerHTML = `
+    <div class="card" style="overflow:hidden">
+        <h3 style="margin-bottom:14px">${emoji} ${title}</h3>
+        <div class="ranking-list">
+            ${items.map((d,i) => {
+                const pct = Math.min((d.value / mx) * 100, 100);
+                const c = colorFn(d.value, i);
+                return `<div class="ranking-row">
+                    <span class="rank-num">${i+1}</span>
+                    <span class="rank-name">${d.name}</span>
+                    <div class="rank-bar-track">
+                        <div class="rank-bar-fill" style="width:${pct}%;background:linear-gradient(90deg, ${c}cc, ${c})"></div>
+                    </div>
+                    <span class="rank-val" style="color:${c}">${d.display}</span>
+                </div>`;
+            }).join('')}
+        </div>
+    </div>`;
+}
+
+function renderTopRankings() {
+    const container = document.getElementById('ov-top3');
+    if (!container) return;
+
+    // Temperature Top 10
+    const t10 = Object.entries(weatherData)
+        .sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0))
+        .slice(0,10)
+        .map(([n,d])=>({name:n.substring(0,10), value:d.stats?.temp_max_7d||0, display:fmtC(d.stats?.temp_max_7d)}));
+    const tempColors = ['#b48aff','#9b7bf5','#818cf8','#6d8cf7','#60a5fa','#4eb8e8','#38bdf8','#2dd4bf','#34d399','#4ade80'];
+
+    // Rainfall Top 10
+    const r10 = Object.entries(weatherData)
+        .sort((a,b)=>(b[1].stats?.rain_total_7d||0)-(a[1].stats?.rain_total_7d||0))
+        .slice(0,10)
+        .map(([n,d])=>({name:n.substring(0,10), value:d.stats?.rain_total_7d||0, display:fmtMm(d.stats?.rain_total_7d)}));
+    const rainColors = ['#a78bfa','#8b5cf6','#7c3aed','#6366f1','#818cf8','#818cf8','#60a5fa','#38bdf8','#22d3ee','#2dd4bf'];
+
+    // AQI Top 10
+    const a10 = Object.entries(aqiData).filter(([,d])=>d.stats)
+        .sort((a,b)=>(b[1].stats?.aqi_max||0)-(a[1].stats?.aqi_max||0))
+        .slice(0,10)
+        .map(([n,d])=>({name:n.substring(0,10), value:d.stats?.aqi_max||0, display:Math.round(d.stats?.aqi_max||0)}));
+    const aqiColors = ['#f472b6','#e879f9','#c084fc','#a78bfa','#818cf8','#818cf8','#60a5fa','#38bdf8','#22d3ee','#2dd4bf'];
+
+    const cols = container.children;
+    makeRanking(container, 'Temperature (Top 10)', '🔥', t10, (v,i)=>tempColors[i], '°C');
+    // Need 3 separate containers
+    container.innerHTML = '';
+    const c1 = document.createElement('div');
+    const c2 = document.createElement('div');
+    const c3 = document.createElement('div');
+    container.appendChild(c1);
+    container.appendChild(c2);
+    container.appendChild(c3);
+    makeRanking(c1, 'Temperature (Top 10)', '🔥', t10, (v,i)=>tempColors[i], '°C');
+    makeRanking(c2, 'Rainfall 7-Day (Top 10)', '🌧', r10, (v,i)=>rainColors[i], 'mm');
+    makeRanking(c3, 'AQI (Top 10)', '💨', a10, (v,i)=>aqiColors[i], '');
+}
+
+function renderBelowFoldCharts() {
+    const container = document.getElementById('ov-below3');
+    if (!container || container._rendered) return;
+
+    // Humidity Range Top 10
+    const h10 = Object.entries(weatherData).map(([n,d])=>{
+        const hum=d.forecast?.hourly?.relative_humidity_2m;
+        if(!hum||!hum.length) return null;
+        const min=Math.min(...hum), max=Math.max(...hum), avg=Math.round(hum.reduce((a,b)=>a+b,0)/hum.length);
+        return {name:n.substring(0,10),min,max,avg,range:max-min};
+    }).filter(Boolean).sort((a,b)=>b.range-a.range).slice(0,10);
+    const humColors = ['#818cf8','#6d8cf7','#60a5fa','#4eb8e8','#38bdf8','#22d3ee','#2dd4bf','#34d399','#4ade80','#a3e635'];
+
+    // Wind Speed Top 10
+    const w10 = Object.entries(weatherData).map(([n,d])=>{
+        const ws=d.forecast?.hourly?.wind_speed_10m;
+        const maxW=ws&&ws.length?Math.round(Math.max(...ws)):0;
+        return {name:n.substring(0,10),value:maxW,display:maxW+' km/h'};
+    }).filter(d=>d.value>0).sort((a,b)=>b.value-a.value).slice(0,10);
+    const windColors = ['#b48aff','#9b7bf5','#818cf8','#60a5fa','#38bdf8','#22d3ee','#2dd4bf','#34d399','#a78bfa','#c084fc'];
+
+    // Coldest vs Warmest
+    const sorted2 = Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0));
+    const cold5 = sorted2.slice(-5).reverse().map(([n,d])=>({name:n.substring(0,10), value:Math.abs(d.stats?.temp_min_7d||0), display:fmtC(d.stats?.temp_min_7d)}));
+    const warm5 = sorted2.slice(0,5).map(([n,d])=>({name:n.substring(0,10), value:d.stats?.temp_max_7d||0, display:fmtC(d.stats?.temp_max_7d)}));
+    const cwItems = [...cold5.map(d=>({...d, _cold:true})), ...warm5];
+    const cwColors = cold5.map(()=>['#60a5fa','#818cf8']).flat().concat(warm5.map(()=>['#f472b6','#c084fc']).flat());
+
+    container.innerHTML = '';
+    const c1 = document.createElement('div');
+    const c2 = document.createElement('div');
+    const c3 = document.createElement('div');
+    container.appendChild(c1);
+    container.appendChild(c2);
+    container.appendChild(c3);
+
+    makeRanking(c1, 'Humidity Range (Top 10)', '💧',
+        h10.map(d=>({name:d.name, value:d.range, display:d.min+'–'+d.max+'%'})),
+        (v,i)=>humColors[i], '%');
+    makeRanking(c2, 'Wind Speed (Top 10)', '🌬', w10,
+        (v,i)=>windColors[i], 'km/h');
+    makeRanking(c3, 'Coldest vs Warmest', '❄',
+        cwItems.map(d=>({name:d.name, value:d.value, display:d.display})),
+        (v,i)=>cwColors[i]||'#a78bfa', '');
+
+    container._rendered = true;
 }

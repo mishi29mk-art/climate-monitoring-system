@@ -337,6 +337,50 @@ a:hover { color: var(--accent-light); }
 .g5 { grid-template-columns: repeat(5, 1fr); }
 .g6 { grid-template-columns: repeat(6, 1fr); }
 
+/* ═══ Ranking Horizontal Bars ═══════════════════════════════ */
+.ranking-list { display: flex; flex-direction: column; gap: 8px; }
+.ranking-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+}
+.rank-num {
+    min-width: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-align: center;
+}
+.rank-name {
+    min-width: 70px;
+    font-size: 11px;
+    color: #b0b8d0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rank-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(100, 80, 255, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.rank-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 8px rgba(100, 80, 255, 0.3);
+}
+.rank-val {
+    min-width: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+    font-family: 'Share Tech Mono', monospace;
+}
+
 /* ═══════════════════════════════════════════════════════════
    STAT CARDS — Clean border-only (Supabase style)
    ═══════════════════════════════════════════════════════════ */
