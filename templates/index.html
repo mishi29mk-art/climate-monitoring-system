@@ -6,7 +6,7 @@
     <title>🌍 Climate Monitor — Pakistan</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=64">
+    <link rel="stylesheet" href="/static/css/style.css?v=65">
 </head>
 <body>
 <nav class="sidebar" id="sidebar">
@@ -76,7 +76,12 @@
     <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
 </div>
 
-
+<!-- Digital Clock (every page) -->
+<div class="digital-clock" id="digital-clock">
+    <div class="dc-time" id="dc-time">00:00:00</div>
+    <div class="dc-ampm" id="dc-ampm">AM</div>
+    <div class="dc-date" id="dc-date">TUE, 18 AUG, 2026</div>
+</div>
 
 <div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
 
@@ -118,7 +123,7 @@
 <script src="/static/js/flood-replay-map.js?v=44"></script>
 <script src="/static/js/maps.js?v=44"></script>
 <script src="/static/js/charts.js?v=44"></script>
-<script src="/static/js/app.js?v=84"></script>
+<script src="/static/js/app.js?v=85"></script>
 <script src="/static/js/sections/alert-settings.js?v=2"></script>
 <script>
 // Prevent alert-settings.js from being loaded again by loadSectionScript
@@ -126,6 +131,30 @@ if (typeof _loadedSections !== 'undefined') _loadedSections.add('alert-settings'
 </script>
 
 <script>lucide.createIcons();</script>
+<script>
+(function(){
+    var timeEl = document.getElementById('dc-time');
+    var ampmEl = document.getElementById('dc-ampm');
+    var dateEl = document.getElementById('dc-date');
+    if (!timeEl) return;
+    var days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    function tick() {
+        var now = new Date();
+        var pk = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Karachi'}));
+        var h = pk.getHours();
+        var m = String(pk.getMinutes()).padStart(2, '0');
+        var s = String(pk.getSeconds()).padStart(2, '0');
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        var h12 = h % 12 || 12;
+        timeEl.textContent = h12 + ':' + m + ':' + s;
+        ampmEl.textContent = ampm;
+        dateEl.textContent = days[pk.getDay()] + ', ' + pk.getDate() + ' ' + months[pk.getMonth()] + ', ' + pk.getFullYear();
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
 
 </body>
 </html>
