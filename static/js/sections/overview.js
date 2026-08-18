@@ -8,8 +8,13 @@ function render_overview(el) {
     const alerts = alertsData || [];
     el.innerHTML = `
     <div class="hero">
-        <h1>🌍 Climate Monitoring System — Pakistan</h1>
-        <p>Real-time monitoring of temperature, air quality, precipitation, drought, wind, UV, river discharge, flood risk — across all provinces.</p>
+        <div class="hero-top">
+            <div>
+                <h1>🌍 Climate Monitoring System — Pakistan</h1>
+                <p>Real-time monitoring of temperature, air quality, precipitation, drought, wind, UV, river discharge, flood risk — across all provinces.</p>
+            </div>
+            <div class="dashboard-clock" id="dashboard-clock"></div>
+        </div>
         <div class="hero-stats">
             <div class="hero-stat"><div class="val">${s.districts_monitored||0}</div><div class="lbl">Districts Monitored</div></div>
             <div class="hero-stat"><div class="val" style="color:${tempColor(hottest.temp)}">${fmtC(hottest.temp)}</div><div class="lbl">Hottest Today</div></div>
