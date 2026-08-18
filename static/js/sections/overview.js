@@ -146,4 +146,26 @@ function render_overview(el) {
     setTimeout(window._renderOverviewBelowFold, 1500);
     window.addEventListener('scroll', window._renderOverviewBelowFold, {once:true});
     window.addEventListener('resize', window._renderOverviewBelowFold, {once:true});
+    // Live Dashboard Clock
+    (function(){
+        const el = document.getElementById('dashboard-clock');
+        if (!el) return;
+        function tick() {
+            const now = new Date();
+            const pk = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Karachi'}));
+            const h = pk.getHours();
+            const m = String(pk.getMinutes()).padStart(2,'0');
+            const s = String(pk.getSeconds()).padStart(2,'0');
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            el.innerHTML = '<div class="clock-label">Pakistan Standard Time</div>' +
+                '<div class="clock-time">' + h12 + ':' + m + '<span class="clock-sec">:' + s + '</span><span class="clock-ampm"> ' + ampm + '</span></div>' +
+                '<div class="clock-date">' + pk.getDate() + ' ' + months[pk.getMonth()] + ' ' + pk.getFullYear() + '</div>' +
+                '<div class="clock-day">' + days[pk.getDay()] + '</div>';
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
 }
