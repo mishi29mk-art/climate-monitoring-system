@@ -153,7 +153,7 @@ function renderBelowFoldCharts() {
         const min=Math.min(...hum), max=Math.max(...hum), avg=Math.round(hum.reduce((a,b)=>a+b,0)/hum.length);
         return {name:n.substring(0,10),min,max,avg,range:max-min};
     }).filter(Boolean).sort((a,b)=>b.range-a.range).slice(0,10);
-    const humColors = ['#818cf8','#6d8cf7','#60a5fa','#4eb8e8','#38bdf8','#22d3ee','#2dd4bf','#34d399','#4ade80','#a3e635'];
+    const humColors = ['#b48aff','#a78bfa','#9b7bf5','#8b5cf6','#818cf8','#7c3aed','#6d28d9','#6366f1','#7e6ce8','#9580f0'];
 
     // Wind Speed Top 10
     const w10 = Object.entries(weatherData).map(([n,d])=>{
@@ -161,14 +161,14 @@ function renderBelowFoldCharts() {
         const maxW=ws&&ws.length?Math.round(Math.max(...ws)):0;
         return {name:n.substring(0,10),value:maxW,display:maxW+' km/h'};
     }).filter(d=>d.value>0).sort((a,b)=>b.value-a.value).slice(0,10);
-    const windColors = ['#b48aff','#9b7bf5','#818cf8','#60a5fa','#38bdf8','#22d3ee','#2dd4bf','#34d399','#a78bfa','#c084fc'];
+    const windColors = ['#c084fc','#b48aff','#a78bfa','#9b7bf5','#8b5cf6','#818cf8','#7c3aed','#6366f1','#818cf8','#9580f0'];
 
     // Coldest vs Warmest
     const sorted2 = Object.entries(weatherData).sort((a,b)=>(b[1].stats?.temp_max_7d||0)-(a[1].stats?.temp_max_7d||0));
     const cold5 = sorted2.slice(-5).reverse().map(([n,d])=>({name:n.substring(0,10), value:Math.abs(d.stats?.temp_min_7d||0), display:fmtC(d.stats?.temp_min_7d)}));
     const warm5 = sorted2.slice(0,5).map(([n,d])=>({name:n.substring(0,10), value:d.stats?.temp_max_7d||0, display:fmtC(d.stats?.temp_max_7d)}));
     const cwItems = [...cold5.map(d=>({...d, _cold:true})), ...warm5];
-    const cwColors = cold5.map(()=>['#60a5fa','#818cf8']).flat().concat(warm5.map(()=>['#f472b6','#c084fc']).flat());
+    const cwColors = cold5.map(()=>['#6366f1','#818cf8']).flat().concat(warm5.map(()=>['#e879f9','#c084fc']).flat());
 
     container.innerHTML = '';
     const c1 = document.createElement('div');
