@@ -6,7 +6,7 @@
     <title>🌍 Climate Monitor — Pakistan</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=62">
+    <link rel="stylesheet" href="/static/css/style.css?v=63">
 </head>
 <body>
 <nav class="sidebar" id="sidebar">
@@ -74,6 +74,16 @@
 
 <div class="main-content" id="main-content">
     <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
+</div>
+
+<!-- Cyberpunk Digital Clock (every page) -->
+<div class="cyber-clock" id="cyber-clock">
+    <canvas id="matrix-canvas"></canvas>
+    <div class="cyber-clock-inner">
+        <div class="cyber-clock-time" id="cyber-time">00:00:00</div>
+        <div class="cyber-clock-ampm" id="cyber-ampm">AM</div>
+        <div class="cyber-clock-date" id="cyber-date">TUE, 18 AUG, 2026</div>
+    </div>
 </div>
 
 <div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
