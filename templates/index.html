@@ -126,9 +126,71 @@
 <script src="/static/js/flood-replay-map.js?v=44"></script>
 <script src="/static/js/maps.js?v=44"></script>
 <script src="/static/js/charts.js?v=44"></script>
-<script src="/static/js/app.js?v=76"></script>
+<script src="/static/js/app.js?v=77"></script>
 <script src="/static/js/sections/alert-settings.js?v=1"></script>
 
 <script>lucide.createIcons();</script>
+<script>
+// Cyberpunk Digital Clock (every page)
+(function(){
+    var timeEl = document.getElementById('cyber-time');
+    var ampmEl = document.getElementById('cyber-ampm');
+    var dateEl = document.getElementById('cyber-date');
+    var canvas = document.getElementById('matrix-canvas');
+    if (!timeEl || !canvas) return;
+    
+    var ctx = canvas.getContext('2d');
+    var days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    
+    // Matrix rain
+    var chars = '01ア イ ウ エ オ カ キ ク ケ コ サ シ ス セ ソ';
+    var fontSize = 12;
+    var columns, drops;
+    
+    function initMatrix() {
+        canvas.width = canvas.offsetWidth || 280;
+        canvas.height = canvas.offsetHeight || 160;
+        columns = Math.floor(canvas.width / fontSize);
+        drops = [];
+        for (var i = 0; i < columns; i++) drops[i] = 1;
+    }
+    initMatrix();
+    
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(8, 10, 26, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#6633aa';
+        ctx.font = fontSize + 'px monospace';
+        for (var i = 0; i < drops.length; i++) {
+            var text = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+    
+    function tick() {
+        var now = new Date();
+        var pk = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Karachi'}));
+        var h = pk.getHours();
+        var m = String(pk.getMinutes()).padStart(2, '0');
+        var s = String(pk.getSeconds()).padStart(2, '0');
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        var h12 = h % 12 || 12;
+        timeEl.textContent = h12 + ':' + m + ':' + s;
+        ampmEl.textContent = ampm;
+        dateEl.textContent = days[pk.getDay()] + ', ' + pk.getDate() + ' ' + months[pk.getMonth()] + ', ' + pk.getFullYear();
+        drawMatrix();
+    }
+    
+    tick();
+    setInterval(tick, 1000);
+    setInterval(drawMatrix, 50);
+    window.addEventListener('resize', initMatrix);
+})();
+</script>
 </body>
 </html>
