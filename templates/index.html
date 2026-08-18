@@ -6,20 +6,21 @@
     <title>🌍 Climate Monitor — Pakistan</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=68">
+    <link rel="stylesheet" href="/static/css/style.css?v=69">
 </head>
 <body>
-<nav class="sidebar" id="sidebar">
+<a href="#main-content" class="skip-link" style="position:absolute;top:-100px;left:0;background:var(--accent);color:#000;padding:8px 16px;z-index:9999;border-radius:0 0 8px 0;font-size:14px;text-decoration:none" onfocus="this.style.top='0'" onblur="this.style.top='-100px'">Skip to main content</a>
+<nav class="sidebar" id="sidebar" aria-label="Main navigation">
     <div class="sidebar-header">
         <span class="logo"><i data-lucide="globe"></i></span>
         <div style="flex:1"><div class="brand">Climate Monitor · Pakistan</div><div class="subtitle">Full Climate Monitoring & Mapping System</div></div>
-        <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode">
+        <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">
             <span class="theme-icon-dark"><i data-lucide="sun"></i></span>
             <span class="theme-icon-light"><i data-lucide="moon"></i></span>
         </button>
     </div>
     <div class="district-search-wrap">
-        <input type="text" id="district-search" class="district-search-input" placeholder="Search sections & districts…" data-i18n-placeholder-en="Search sections & districts…" data-i18n-placeholder-ur="sections اور districts تلاش کریں…" autocomplete="off">
+        <input type="text" id="district-search" class="district-search-input" placeholder="Search sections & districts…" data-i18n-placeholder-en="Search sections & districts…" data-i18n-placeholder-ur="sections اور districts تلاش کریں…" autocomplete="off" aria-label="Search sections and districts">
         <div id="district-search-dropdown" class="district-search-dropdown"></div>
     </div>
     <div class="nav-items" id="nav-items">
@@ -79,24 +80,24 @@
     <div class="dc-date" id="dc-date">TUE, 18 AUG, 2026</div>
 </div>
 
-<div class="main-content" id="main-content">
+<div class="main-content" id="main-content" role="main" aria-live="polite">
     <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
 </div>
 
 <div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
 
 <!-- Mobile Menu Button -->
-<button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()"><i data-lucide="menu"></i></button>
+<button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle mobile menu" aria-expanded="false" aria-controls="sidebar"><i data-lucide="menu"></i></button>
 <span id="last-updated-badge" style="position:fixed;top:10px;right:100px;font-size:11px;color:var(--text-muted);background:var(--bg-card);padding:4px 10px;border-radius:12px;border:1px solid var(--border);z-index:100;cursor:default">Loading…</span>
 
 <!-- Sidebar Overlay (mobile) -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
 <!-- Language Toggle -->
-<button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()"><i data-lucide="globe"></i> EN</button>
+<button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()" aria-label="Toggle language"><i data-lucide="globe"></i> EN</button>
 
 <!-- Notification Bell -->
-<button class="bell-btn" id="bell-btn" title="Alerts">
+<button class="bell-btn" id="bell-btn" title="Alerts" aria-label="View alerts">
     <i data-lucide="bell"></i>
     <span class="bell-badge" id="bell-badge">0</span>
 </button>
@@ -106,11 +107,11 @@
 <div id="threshold-toast" style="position:fixed;bottom:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
 
 <!-- Auth Modal -->
-<div id="auth-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center">
+<div id="auth-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;width:320px;box-shadow:var(--shadow-lg)">
-        <h3 style="margin-bottom:16px;text-align:center"><i data-lucide="lock"></i> Login</h3>
-        <input id="auth-user" type="text" placeholder="Username" style="width:100%;padding:10px;margin-bottom:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
-        <input id="auth-pass" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
+        <h3 id="auth-modal-title" style="margin-bottom:16px;text-align:center"><i data-lucide="lock"></i> Login</h3>
+        <input id="auth-user" type="text" placeholder="Username" style="width:100%;padding:10px;margin-bottom:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)" aria-label="Username" autocomplete="username">
+        <input id="auth-pass" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)" aria-label="Password" autocomplete="current-password">
         <button onclick="doLogin()" style="width:100%;padding:10px;background:var(--accent);color:#0f0f0f;border:none;border-radius:9999px;cursor:pointer;font-weight:600;font-family:inherit">Login</button>
         <div id="auth-error" style="text-align:center;margin-top:8px;font-size:11px;color:#ef4444;display:none"></div>
     </div>
@@ -123,7 +124,7 @@
 <script src="/static/js/flood-replay-map.js?v=44"></script>
 <script src="/static/js/maps.js?v=44"></script>
 <script src="/static/js/charts.js?v=44"></script>
-<script src="/static/js/app.js?v=86"></script>
+<script src="/static/js/app.js?v=87"></script>
 <script src="/static/js/sections/alert-settings.js?v=2"></script>
 <script>
 // Prevent alert-settings.js from being loaded again by loadSectionScript

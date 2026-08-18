@@ -1,9 +1,21 @@
 /* ─── Climate Monitor SPA Router ──────────────────────────── */
 let weatherData = null, aqiData = null, riverData = null, alertsData = null, summaryData = null;
 let lastDataUpdate = null;
-// Expose to window for sections loaded lazily
 window.weatherData = null; window.aqiData = null; window.riverData = null; window.alertsData = null; window.summaryData = null;
 let dataLoaded = false;
+
+// ─── Fix #6: Interval ID tracking for cleanup ──────────────
+const _intervalIds = [];
+function trackedSetInterval(fn, ms) {
+    const id = setInterval(fn, ms);
+    _intervalIds.push(id);
+    return id;
+}
+function clearAllIntervals() {
+    _intervalIds.forEach(id => clearInterval(id));
+    _intervalIds.length = 0;
+}
+window.addEventListener('beforeunload', clearAllIntervals);
 
 // ─── Security: XSS Prevention ──────────────────────────────
 function escapeHtml(s) {
@@ -31,7 +43,7 @@ function isTokenExpired(token) {
 // ─── Security: Login Attempt Lockout ───────────────────────
 const _loginAttempts = { count: 0, lockedUntil: 0 };
 const MAX_ATTEMPTS = 3;
-const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+const LOCKOUT_MS = 5 * 60 * 1000;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Theme toggle
@@ -62,7 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
             authToken = null; currentUser = null;
             localStorage.removeItem('climate-token');
         } else {
-            // Validate token with server
             fetch('/api/auth/verify', {
                 headers: { 'Authorization': 'Bearer ' + authToken }
             }).then(r => r.json()).then(d => {
@@ -127,8 +138,8 @@ async function loadAllData() {
     try { updateLastUpdatedBadge(); } catch(e) { console.warn('updateLastUpdatedBadge failed:', e); }
 }
 
-// Auto-refresh data every 30 minutes
-setInterval(async () => {
+// Fix #6: Use tracked intervals — auto-refresh data every 30 minutes
+trackedSetInterval(async () => {
     try {
         await loadAllData();
         console.log('🔄 Data auto-refreshed at', new Date().toLocaleTimeString());
@@ -143,7 +154,7 @@ function updateLastUpdatedBadge() {
         badge.title = lastDataUpdate.toLocaleString();
     }
 }
-setInterval(updateLastUpdatedBadge, 60000);
+trackedSetInterval(updateLastUpdatedBadge, 60000);
 
 function renderAlerts() {
     const dot = document.querySelector('.alert-dot');
@@ -185,7 +196,7 @@ function loadSectionScript(id) {
     return new Promise((resolve, reject) => {
         if (_loadedSections.has(id)) { resolve(); return; }
         if (_loadingSections.has(id)) {
-            const check = setInterval(() => {
+            const check = trackedSetInterval(() => {
                 if (_loadedSections.has(id)) { clearInterval(check); resolve(); }
             }, 50);
             return;
@@ -197,6 +208,27 @@ function loadSectionScript(id) {
         script.onerror = () => { _loadingSections.delete(id); reject(new Error(`Failed to load ${id}.js`)); };
         document.body.appendChild(script);
     });
+}
+
+// Fix #7: Section error boundary with retry
+function _sectionErrorHTML(id, errorMsg) {
+    const safeId = escapeHtml(id);
+    const safeMsg = escapeHtml(errorMsg || 'Unknown error');
+    return `<div class="card" style="text-align:center;padding:32px">
+        <div style="font-size:24px;margin-bottom:8px">⚠️</div>
+        <h3 style="margin-bottom:8px;color:var(--text-primary)">Section unavailable</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">${safeMsg}</p>
+        <button onclick="retrySection('${safeId}')" class="retry-btn"
+            style="padding:8px 20px;border-radius:8px;border:1px solid rgba(100,80,255,0.3);background:rgba(100,80,255,0.15);color:#b48aff;cursor:pointer;font-size:12px;font-weight:600">
+            ↻ Retry
+        </button>
+    </div>`;
+}
+
+function retrySection(id) {
+    _loadedSections.delete(id);
+    _loadingSections.delete(id);
+    loadSection(id);
 }
 
 function loadSection(id) {
@@ -211,8 +243,9 @@ function loadSection(id) {
         const fn = window['render_' + id.replace(/-/g, '_')];
         if (fn) fn(el); else el.innerHTML = '<div class="card"><h3>Section coming soon</h3></div>';
         if(window.lucide) lucide.createIcons();
-    }).catch(() => {
-        el.innerHTML = '<div class="card"><h3>Section unavailable</h3></div>';
+    }).catch(err => {
+        console.error(`Section load failed [${id}]:`, err);
+        el.innerHTML = _sectionErrorHTML(id, err.message);
         if(window.lucide) lucide.createIcons();
     });
 }
@@ -238,7 +271,11 @@ function toggleMobileSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     sidebar.classList.toggle('open');
-    if (overlay) overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+    const isOpen = sidebar.classList.contains('open');
+    if (overlay) overlay.style.display = isOpen ? 'block' : 'none';
+    // Fix #9: Update ARIA state
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', String(isOpen));
 }
 
 function applyTranslations() {
@@ -253,7 +290,7 @@ function applyTranslations() {
     if(window.lucide) lucide.createIcons();
 }
 
-// ═══ Auth System (with security hardening) ═══════════════════
+// ═══ Auth System ═══════════════════════════════════════════
 let authToken = localStorage.getItem('climate-token') || null;
 let currentUser = null;
 
@@ -268,7 +305,6 @@ function hideAuthError() {
 }
 
 async function doLogin() {
-    // ─── Security: Check lockout ──────────────────────────
     const now = Date.now();
     if (_loginAttempts.lockedUntil > now) {
         const mins = Math.ceil((_loginAttempts.lockedUntil - now) / 60000);
@@ -294,7 +330,6 @@ async function doLogin() {
         const data = await res.json();
 
         if (data.token) {
-            // ─── Security: Validate token before storing ───
             if (isTokenExpired(data.token)) {
                 showAuthError('Server returned expired token. Try again.');
                 return;
@@ -305,10 +340,8 @@ async function doLogin() {
             document.getElementById('auth-modal').style.display = 'none';
             _loginAttempts.count = 0;
             _loginAttempts.lockedUntil = 0;
-            // Re-render with auth context
             alert('Welcome, ' + escapeHtml(data.user.name) + '! Role: ' + escapeHtml(data.user.role));
         } else {
-            // ─── Security: Track failed attempts ───────────
             _loginAttempts.count++;
             if (_loginAttempts.count >= MAX_ATTEMPTS) {
                 _loginAttempts.lockedUntil = now + LOCKOUT_MS;
@@ -327,7 +360,6 @@ async function doLogin() {
 function doLogout() {
     authToken = null; currentUser = null;
     localStorage.removeItem('climate-token');
-    // Reload to clear any cached state
     window.location.reload();
 }
 
@@ -389,7 +421,6 @@ function doLogout() {
                 }
             }
             if (matches.length > 0) {
-                // ─── Security: Escape all data before innerHTML ─
                 dropdown.innerHTML = matches.map(d => {
                     const temp = d.temp != null ? Math.round(d.temp) + '°C' : 'N/A';
                     const safeName = escapeHtml(d.name);

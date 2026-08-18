@@ -14,6 +14,12 @@
     --bg-input: #1a1d52;
     --bg-elevated: #1a1d52;
 
+    /* ── Body Gradient Stops ── */
+    --bg-gradient-top: #080a1a;
+    --bg-gradient-mid: #0d1030;
+    --bg-gradient-lower: #0f1240;
+    --bg-gradient-bottom: #0a0c28;
+
     /* ── Accent (Violet Blue Glow) ── */
     --accent: #a78bfa;
     --accent-light: #c4b5fd;
@@ -67,7 +73,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-    background: linear-gradient(180deg, #080a1a 0%, #0d1030 30%, #0f1240 60%, #0a0c28 100%);
+    background: linear-gradient(180deg, var(--bg-gradient-top) 0%, var(--bg-gradient-mid) 30%, var(--bg-gradient-lower) 60%, var(--bg-gradient-bottom) 100%);
     background-attachment: fixed;
     color: var(--text-primary);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -95,7 +101,7 @@ a:hover { color: var(--accent-light); }
     position: fixed; left: 0; top: 0; bottom: 0;
     width: 270px;
     height: 100vh;
-    background: linear-gradient(180deg, #0b0e2e 0%, #0d1035 50%, #0a0c24 100%);
+    background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--bg-primary) 50%, var(--bg-void) 100%);
     border-right: 1px solid var(--border);
     overflow-y: scroll;
     overflow-x: hidden;
