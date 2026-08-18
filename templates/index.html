@@ -6,7 +6,7 @@
     <title>🌍 Climate Monitor — Pakistan</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=63">
+    <link rel="stylesheet" href="/static/css/style.css?v=64">
 </head>
 <body>
 <nav class="sidebar" id="sidebar">
@@ -76,15 +76,7 @@
     <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
 </div>
 
-<!-- Cyberpunk Digital Clock (every page) -->
-<div class="cyber-clock" id="cyber-clock">
-    <canvas id="matrix-canvas"></canvas>
-    <div class="cyber-clock-inner">
-        <div class="cyber-clock-time" id="cyber-time">00:00:00</div>
-        <div class="cyber-clock-ampm" id="cyber-ampm">AM</div>
-        <div class="cyber-clock-date" id="cyber-date">TUE, 18 AUG, 2026</div>
-    </div>
-</div>
+
 
 <div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
 
@@ -126,7 +118,7 @@
 <script src="/static/js/flood-replay-map.js?v=44"></script>
 <script src="/static/js/maps.js?v=44"></script>
 <script src="/static/js/charts.js?v=44"></script>
-<script src="/static/js/app.js?v=83"></script>
+<script src="/static/js/app.js?v=84"></script>
 <script src="/static/js/sections/alert-settings.js?v=2"></script>
 <script>
 // Prevent alert-settings.js from being loaded again by loadSectionScript
@@ -134,67 +126,6 @@ if (typeof _loadedSections !== 'undefined') _loadedSections.add('alert-settings'
 </script>
 
 <script>lucide.createIcons();</script>
-<script>
-// Cyberpunk Digital Clock (every page)
-(function(){
-    var timeEl = document.getElementById('cyber-time');
-    var ampmEl = document.getElementById('cyber-ampm');
-    var dateEl = document.getElementById('cyber-date');
-    var canvas = document.getElementById('matrix-canvas');
-    if (!timeEl || !canvas) return;
-    
-    var ctx = canvas.getContext('2d');
-    var days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    
-    // Matrix rain
-    var chars = '01ア イ ウ エ オ カ キ ク ケ コ サ シ ス セ ソ';
-    var fontSize = 12;
-    var columns, drops;
-    
-    function initMatrix() {
-        canvas.width = canvas.offsetWidth || 280;
-        canvas.height = canvas.offsetHeight || 160;
-        columns = Math.floor(canvas.width / fontSize);
-        drops = [];
-        for (var i = 0; i < columns; i++) drops[i] = 1;
-    }
-    initMatrix();
-    
-    function drawMatrix() {
-        ctx.fillStyle = 'rgba(8, 10, 26, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#6633aa';
-        ctx.font = fontSize + 'px monospace';
-        for (var i = 0; i < drops.length; i++) {
-            var text = chars[Math.floor(Math.random() * chars.length)];
-            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                drops[i] = 0;
-            }
-            drops[i]++;
-        }
-    }
-    
-    function tick() {
-        var now = new Date();
-        var pk = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Karachi'}));
-        var h = pk.getHours();
-        var m = String(pk.getMinutes()).padStart(2, '0');
-        var s = String(pk.getSeconds()).padStart(2, '0');
-        var ampm = h >= 12 ? 'PM' : 'AM';
-        var h12 = h % 12 || 12;
-        timeEl.textContent = h12 + ':' + m + ':' + s;
-        ampmEl.textContent = ampm;
-        dateEl.textContent = days[pk.getDay()] + ', ' + pk.getDate() + ' ' + months[pk.getMonth()] + ', ' + pk.getFullYear();
-        drawMatrix();
-    }
-    
-    tick();
-    setInterval(tick, 1000);
-    setInterval(drawMatrix, 50);
-    window.addEventListener('resize', initMatrix);
-})();
-</script>
+
 </body>
 </html>

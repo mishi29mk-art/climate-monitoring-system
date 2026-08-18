@@ -8,13 +8,8 @@ function render_overview(el) {
     const alerts = alertsData || [];
     el.innerHTML = `
     <div class="hero">
-        <div class="hero-top">
-            <div>
-                <h1>🌍 Climate Monitoring System — Pakistan</h1>
-                <p>Real-time monitoring of temperature, air quality, precipitation, drought, wind, UV, river discharge, flood risk — across all provinces.</p>
-            </div>
-            <div class="dashboard-clock" id="dashboard-clock"></div>
-        </div>
+        <h1>🌍 Climate Monitoring System — Pakistan</h1>
+        <p>Real-time monitoring of temperature, air quality, precipitation, drought, wind, UV, river discharge, flood risk — across all provinces.</p>
         <div class="hero-stats">
             <div class="hero-stat"><div class="val">${s.districts_monitored||0}</div><div class="lbl">Districts Monitored</div></div>
             <div class="hero-stat"><div class="val" style="color:${tempColor(hottest.temp)}">${fmtC(hottest.temp)}</div><div class="lbl">Hottest Today</div></div>
@@ -144,28 +139,5 @@ function render_overview(el) {
     window._renderOverviewBelowFold();
     setTimeout(window._renderOverviewBelowFold, 500);
     setTimeout(window._renderOverviewBelowFold, 1500);
-    window.addEventListener('scroll', window._renderOverviewBelowFold, {once:true});
-    window.addEventListener('resize', window._renderOverviewBelowFold, {once:true});
-    // Live Dashboard Clock
-    (function(){
-        const el = document.getElementById('dashboard-clock');
-        if (!el) return;
-        function tick() {
-            const now = new Date();
-            const pk = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Karachi'}));
-            const h = pk.getHours();
-            const m = String(pk.getMinutes()).padStart(2,'0');
-            const s = String(pk.getSeconds()).padStart(2,'0');
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            const h12 = h % 12 || 12;
-            const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            el.innerHTML = '<div class="clock-label">Pakistan Standard Time</div>' +
-                '<div class="clock-time">' + h12 + ':' + m + '<span class="clock-sec">:' + s + '</span><span class="clock-ampm"> ' + ampm + '</span></div>' +
-                '<div class="clock-date">' + pk.getDate() + ' ' + months[pk.getMonth()] + ' ' + pk.getFullYear() + '</div>' +
-                '<div class="clock-day">' + days[pk.getDay()] + '</div>';
-        }
-        tick();
-        setInterval(tick, 1000);
-    })();
+    render_overview_charts(el);
 }
