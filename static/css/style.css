@@ -106,7 +106,7 @@ a:hover { color: var(--accent-light); }
 }
 
 .sidebar::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
     display: block !important;
 }
 .sidebar::-webkit-scrollbar-track {
@@ -124,8 +124,8 @@ a:hover { color: var(--accent-light); }
 
 /* Force scrollbar visibility on all browsers */
 .sidebar {
-    scrollbar-width: thin;
-    scrollbar-color: #555 #1a1a1a;
+    scrollbar-width: auto;
+    scrollbar-color: #666 #1a1a1a;
 }
 
 .sidebar-header {
