@@ -1,7 +1,8 @@
 /* ─── Alert Settings & Notification Bell ─────────────────── */
 
-const ALERT_THRESHOLDS_KEY = 'climate-alert-thresholds';
-const ALERT_TOAST_SHOWN_KEY = 'climate-alert-toast-shown';
+// Use var to avoid redeclaration errors when script reloads
+var ALERT_THRESHOLDS_KEY = 'climate-alert-thresholds';
+var ALERT_TOAST_SHOWN_KEY = 'climate-alert-toast-shown';
 
 const defaultThresholds = {
     temperature: 45,   // °C
