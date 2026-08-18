@@ -6,13 +6,13 @@
     <title>🌍 Climate Monitor — Pakistan</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=52">
+    <link rel="stylesheet" href="/static/css/style.css?v=53">
 </head>
 <body>
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <span class="logo"><i data-lucide="globe"></i></span>
-        <div style="flex:1"><div class="brand">Climate Monitor · Pakistan</div><div class="subtitle">Full Climate Monitoring & Mapping System</div></div>
+        <div style="flex:1"><div class="brand">Climate Monitor · Pakistan</div><div class="subtitle">Full Climate Monitoring & Mapping System</div><div class="live-clock" id="live-clock"></div></div>
         <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode">
             <span class="theme-icon-dark"><i data-lucide="sun"></i></span>
             <span class="theme-icon-light"><i data-lucide="moon"></i></span>
@@ -118,6 +118,28 @@
 <script src="/static/js/charts.js?v=44"></script>
 <script src="/static/js/app.js?v=74"></script>
 <script src="/static/js/sections/alert-settings.js?v=1"></script>
+<script>
+// Live Clock
+(function(){
+    const el = document.getElementById('live-clock');
+    if (!el) return;
+    function tick() {
+        const now = new Date();
+        const pk = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Karachi'}));
+        const h = pk.getHours();
+        const m = String(pk.getMinutes()).padStart(2,'0');
+        const s = String(pk.getSeconds()).padStart(2,'0');
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        el.innerHTML = '<span class="clock-time">' + h12 + ':' + m + ' <span class="clock-sec">' + s + '</span> ' + ampm + '</span>' +
+            '<span class="clock-date">' + days[pk.getDay()] + ', ' + pk.getDate() + ' ' + months[pk.getMonth()] + ' PKT</span>';
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
 <script>lucide.createIcons();</script>
 </body>
 </html>

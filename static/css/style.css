@@ -131,6 +131,40 @@ a:hover { color: var(--accent-light); }
     letter-spacing: 0.02em;
 }
 
+/* ═══ Live Clock ══════════════════════════════════════════ */
+.live-clock {
+    font-family: 'Source Code Pro', 'Fira Code', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+}
+.live-clock .clock-time {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(62, 207, 142, 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(62, 207, 142, 0.15);
+}
+.live-clock .clock-date {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+.live-clock .clock-sec {
+    color: var(--accent);
+    font-weight: 700;
+    animation: clockPulse 1s ease-in-out infinite;
+}
+@keyframes clockPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 .nav-items { padding: 10px 12px 60px; }
 
 .nav-section-label {
