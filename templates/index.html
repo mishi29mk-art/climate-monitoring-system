@@ -6,7 +6,7 @@
     <title>🌍 Climate Monitor — Pakistan</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=66">
+    <link rel="stylesheet" href="/static/css/style.css?v=67">
 </head>
 <body>
 <nav class="sidebar" id="sidebar">
@@ -72,15 +72,15 @@
     </div>
 </nav>
 
-<div class="main-content" id="main-content">
-    <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
-</div>
-
-<!-- Digital Clock (every page) -->
+<!-- Digital Clock (every page) — static in upper section -->
 <div class="digital-clock" id="digital-clock">
     <div class="dc-time" id="dc-time">00:00:00</div>
     <div class="dc-ampm" id="dc-ampm">AM</div>
     <div class="dc-date" id="dc-date">TUE, 18 AUG, 2026</div>
+</div>
+
+<div class="main-content" id="main-content">
+    <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
 </div>
 
 <div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
