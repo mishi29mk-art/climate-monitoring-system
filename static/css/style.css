@@ -106,17 +106,26 @@ a:hover { color: var(--accent-light); }
 }
 
 .sidebar::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    display: block !important;
 }
 .sidebar::-webkit-scrollbar-track {
     background: #1a1a1a;
+    border-radius: 4px;
 }
 .sidebar::-webkit-scrollbar-thumb {
-    background: #4a4a4a;
-    border-radius: 3px;
+    background: #555;
+    border-radius: 4px;
+    border: 1px solid #333;
 }
 .sidebar::-webkit-scrollbar-thumb:hover {
-    background: #666;
+    background: #777;
+}
+
+/* Force scrollbar visibility on all browsers */
+.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: #555 #1a1a1a;
 }
 
 .sidebar-header {
