@@ -1,24 +1,24 @@
-/* ═══ Climate Monitor — Supabase Design System ═══ */
-/* Dark-mode-native with emerald green accent, border-only depth */
+/* ═══ Climate Monitor — Blue Violet Glow Theme ═══ */
+/* Dark-mode-native with violet-blue accent, cosmic glow depth */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap');
 
 :root {
-    /* ── Backgrounds (Near-Black — Supabase style) ── */
-    --bg-void: #0f0f0f;
-    --bg-primary: #171717;
-    --bg-secondary: #1c1c1c;
-    --bg-card: #1c1c1c;
-    --bg-card-hover: #222222;
-    --bg-sidebar: #171717;
-    --bg-input: #222222;
-    --bg-elevated: #222222;
+    /* ── Backgrounds (Blue Violet Cosmic) ── */
+    --bg-void: #080a1a;
+    --bg-primary: #0d1030;
+    --bg-secondary: #121545;
+    --bg-card: #14163a;
+    --bg-card-hover: #1a1d52;
+    --bg-sidebar: #0b0e2e;
+    --bg-input: #1a1d52;
+    --bg-elevated: #1a1d52;
 
-    /* ── Accent (Emerald Green — Supabase brand) ── */
-    --accent: #3ecf8e;
-    --accent-light: #56d99e;
-    --accent-dark: #00c573;
-    --accent-glow: rgba(62, 207, 142, 0.08);
+    /* ── Accent (Violet Blue Glow) ── */
+    --accent: #a78bfa;
+    --accent-light: #c4b5fd;
+    --accent-dark: #7c3aed;
+    --accent-glow: rgba(139, 92, 246, 0.12);
     --accent-gold: #f59e0b;
     --accent-cyan: #06b6d4;
     --accent-emerald: #3ecf8e;
@@ -27,16 +27,16 @@
     --accent-orange: #f97316;
 
     /* ── Text ── */
-    --text-primary: #fafafa;
-    --text-secondary: #b4b4b4;
-    --text-muted: #898989;
-    --text-accent: #3ecf8e;
+    --text-primary: #e8e0f0;
+    --text-secondary: #b0a8c8;
+    --text-muted: #7a7098;
+    --text-accent: #a78bfa;
 
-    /* ── Borders (Dark Gray Scale — Supabase style) ── */
-    --border: #2e2e2e;
-    --border-light: #242424;
-    --border-accent: #363636;
-    --border-green: rgba(62, 207, 142, 0.3);
+    /* ── Borders (Violet Blue Scale) ── */
+    --border: #252860;
+    --border-light: #1e2050;
+    --border-accent: #2e3070;
+    --border-green: rgba(139, 92, 246, 0.3);
 
     /* ── Semantic ── */
     --danger: #ef4444;
@@ -47,12 +47,12 @@
     --purple: #a855f7;
     --orange: #f97316;
 
-    /* ── Shadows (Minimal — Supabase uses borders, not shadows) ── */
-    --shadow-sm: none;
-    --shadow-md: none;
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
-    --shadow-glow: none;
-    --shadow-card: none;
+    /* ── Shadows (Violet Glow) ── */
+    --shadow-sm: 0 1px 3px rgba(80,60,160,0.2);
+    --shadow-md: 0 4px 12px rgba(80,60,160,0.25);
+    --shadow-lg: 0 8px 32px rgba(60,40,140,0.4);
+    --shadow-glow: 0 0 20px rgba(110,80,255,0.15);
+    --shadow-card: 0 2px 8px rgba(80,60,160,0.2);
 
     /* ── Radius ── */
     --r-sm: 6px;
@@ -67,7 +67,8 @@
 html { scroll-behavior: smooth; }
 
 body {
-    background: var(--bg-void);
+    background: linear-gradient(180deg, #080a1a 0%, #0d1030 30%, #0f1240 60%, #0a0c28 100%);
+    background-attachment: fixed;
     color: var(--text-primary);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 15px;
@@ -81,8 +82,8 @@ body {
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #363636; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #434343; }
+::-webkit-scrollbar-thumb { background: #3a3070; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #4a4090; }
 
 a { color: var(--accent); text-decoration: none; transition: color .15s; }
 a:hover { color: var(--accent-light); }
@@ -94,7 +95,7 @@ a:hover { color: var(--accent-light); }
     position: fixed; left: 0; top: 0; bottom: 0;
     width: 270px;
     height: 100vh;
-    background: var(--bg-sidebar);
+    background: linear-gradient(180deg, #0b0e2e 0%, #0d1035 50%, #0a0c24 100%);
     border-right: 1px solid var(--border);
     overflow-y: scroll;
     overflow-x: hidden;
@@ -183,11 +184,11 @@ a:hover { color: var(--accent-light); }
     position: relative;
 }
 .nav-btn:hover {
-    background: rgba(62,207,142,0.05);
+    background: rgba(110,80,255,0.15);
     color: var(--text-primary);
 }
 .nav-btn.active {
-    background: rgba(62,207,142,0.08);
+    background: rgba(110,80,255,0.2);
     color: var(--accent);
     font-weight: 500;
 }
@@ -281,8 +282,8 @@ a:hover { color: var(--accent-light); }
    STAT CARDS — Clean border-only (Supabase style)
    ═══════════════════════════════════════════════════════════ */
 .stat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(20,22,58,0.85) 0%, rgba(26,29,82,0.75) 100%);
+    border: 1px solid rgba(110,80,255,0.2);
     border-radius: 14px;
     padding: 20px;
     position: relative;
