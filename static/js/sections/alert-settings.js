@@ -4,7 +4,7 @@
 var ALERT_THRESHOLDS_KEY = 'climate-alert-thresholds';
 var ALERT_TOAST_SHOWN_KEY = 'climate-alert-toast-shown';
 
-const defaultThresholds = {
+var defaultThresholds = {
     temperature: 45,   // °C
     aqi: 200,          // AQI
     rainfall: 80,      // mm
@@ -13,7 +13,7 @@ const defaultThresholds = {
 
 function getThresholds() {
     try {
-        const saved = localStorage.getItem(ALERT_THRESHOLDS_KEY);
+        var saved = localStorage.getItem(ALERT_THRESHOLDS_KEY);
         return saved ? { ...defaultThresholds, ...JSON.parse(saved) } : { ...defaultThresholds };
     } catch { return { ...defaultThresholds }; }
 }
