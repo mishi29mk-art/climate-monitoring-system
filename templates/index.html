@@ -112,7 +112,7 @@
         <input id="auth-user" type="text" placeholder="Username" style="width:100%;padding:10px;margin-bottom:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
         <input id="auth-pass" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary)">
         <button onclick="doLogin()" style="width:100%;padding:10px;background:var(--accent);color:#0f0f0f;border:none;border-radius:9999px;cursor:pointer;font-weight:600;font-family:inherit">Login</button>
-        <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--text-muted)">admin/admin123 · analyst/analyst123</div>
+        <div id="auth-error" style="text-align:center;margin-top:8px;font-size:11px;color:#ef4444;display:none"></div>
     </div>
 </div>
 
@@ -123,7 +123,7 @@
 <script src="/static/js/flood-replay-map.js?v=44"></script>
 <script src="/static/js/maps.js?v=44"></script>
 <script src="/static/js/charts.js?v=44"></script>
-<script src="/static/js/app.js?v=85"></script>
+<script src="/static/js/app.js?v=86"></script>
 <script src="/static/js/sections/alert-settings.js?v=2"></script>
 <script>
 // Prevent alert-settings.js from being loaded again by loadSectionScript

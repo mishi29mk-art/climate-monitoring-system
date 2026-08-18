@@ -5,6 +5,34 @@ let lastDataUpdate = null;
 window.weatherData = null; window.aqiData = null; window.riverData = null; window.alertsData = null; window.summaryData = null;
 let dataLoaded = false;
 
+// ─── Security: XSS Prevention ──────────────────────────────
+function escapeHtml(s) {
+    if (s == null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
+// ─── Security: JWT Helpers ─────────────────────────────────
+function parseJwt(token) {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        return JSON.parse(atob(parts[1]));
+    } catch(e) { return null; }
+}
+
+function isTokenExpired(token) {
+    const payload = parseJwt(token);
+    if (!payload || !payload.exp) return true;
+    return Date.now() >= payload.exp * 1000;
+}
+
+// ─── Security: Login Attempt Lockout ───────────────────────
+const _loginAttempts = { count: 0, lockedUntil: 0 };
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 document.addEventListener('DOMContentLoaded', () => {
     // Theme toggle
     const savedTheme = localStorage.getItem('climate-theme') || 'dark';
@@ -12,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('theme-toggle')?.addEventListener('click', () => {
         document.documentElement.classList.toggle('light');
         localStorage.setItem('climate-theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
-        // Update all existing maps with new tile style
         updateMapTilesForTheme();
     });
 
@@ -20,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $$('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             loadSection(btn.dataset.s);
-            // Close mobile sidebar after clicking
             if (window.innerWidth <= 900) {
                 document.querySelector('.sidebar')?.classList.remove('open');
                 const overlay = document.getElementById('sidebar-overlay');
@@ -29,23 +55,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // ─── Security: Check token expiry on load ──────────────
+    if (authToken) {
+        if (isTokenExpired(authToken)) {
+            console.warn('Auth token expired — clearing session');
+            authToken = null; currentUser = null;
+            localStorage.removeItem('climate-token');
+        } else {
+            // Validate token with server
+            fetch('/api/auth/verify', {
+                headers: { 'Authorization': 'Bearer ' + authToken }
+            }).then(r => r.json()).then(d => {
+                if (!d.valid) {
+                    authToken = null; currentUser = null;
+                    localStorage.removeItem('climate-token');
+                } else {
+                    currentUser = d.user;
+                }
+            }).catch(() => {});
+        }
+    }
+
     // Load data then render default section
     loadAllData().then(() => {
         dataLoaded = true;
-        // Update bell badge after data loads
         if (typeof updateBellBadge === 'function') updateBellBadge();
-        // Load overview section - use loadSection which handles everything
         try {
             loadSection('overview');
         } catch(e) {
             console.error('Failed to load overview:', e);
-            // Fallback: render directly if loadSection fails
             const el = document.getElementById('sec-overview');
             if (el && typeof render_overview === 'function') {
                 render_overview(el);
             }
         }
-        // Preload popular sections in background after 2s
         setTimeout(() => {
             ['command-center', 'temperature', 'rivers'].forEach(id => {
                 loadSectionScript(id).catch(() => {});
@@ -53,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2000);
     }).catch(e => {
         console.error('loadAllData failed:', e);
-        // Even if data loading fails, try to render overview
         dataLoaded = true;
         try {
             loadSection('overview');
@@ -71,14 +113,12 @@ async function loadAllData() {
         api('/api/alerts'),
         api('/api/summary')
     ]);
-    // Use settled results - partial data is better than no data
     weatherData = (results[0].status === 'fulfilled' && results[0].value) || {};
     aqiData = (results[1].status === 'fulfilled' && results[1].value) || {};
     riverData = (results[2].status === 'fulfilled' && results[2].value) || {};
     alertsData = (results[3].status === 'fulfilled' && results[3].value) || [];
     summaryData = (results[4].status === 'fulfilled' && results[4].value) || {};
     lastDataUpdate = new Date();
-    // Also expose on window for lazily-loaded sections
     window.weatherData = weatherData; window.aqiData = aqiData;
     window.riverData = riverData; window.alertsData = alertsData; window.summaryData = summaryData;
     window.lastDataUpdate = lastDataUpdate;
@@ -103,7 +143,6 @@ function updateLastUpdatedBadge() {
         badge.title = lastDataUpdate.toLocaleString();
     }
 }
-// Update badge every minute
 setInterval(updateLastUpdatedBadge, 60000);
 
 function renderAlerts() {
@@ -121,24 +160,17 @@ function updateMapTilesForTheme() {
     
     document.querySelectorAll('.leaflet-container').forEach(container => {
         if (container._floodTileLayer && container._floodTileStyle !== undefined) {
-            // Remove old tiles
             container.removeLayer(container._floodTileLayer);
-            
-            // Add new tiles
             const subdomains = container._floodTileStyle === 'satellite' ? [] : 
                               (container._floodTileStyle === 'terrain' ? 'abc' : 'abcd');
             const attribution = container._floodTileStyle === 'satellite' ? '© Esri' : 
                                (container._floodTileStyle === 'terrain' ? '© OpenTopoMap' : '© CartoDB');
-            
             container._floodTileLayer = L.tileLayer(FLOOD_TILE_URLS[tileStyle], {
                 maxZoom: 18,
                 subdomains: subdomains,
                 attribution: attribution
             }).addTo(container);
-            
             container._floodTileStyle = tileStyle;
-            
-            // Update basemap button text
             const btn = container.querySelector('.basemap-btn');
             if (btn) btn.textContent = FLOOD_TILE_NAMES[tileStyle];
         }
@@ -152,7 +184,6 @@ const _loadingSections = new Set();
 function loadSectionScript(id) {
     return new Promise((resolve, reject) => {
         if (_loadedSections.has(id)) { resolve(); return; }
-        // If already loading, wait for it instead of creating duplicate script
         if (_loadingSections.has(id)) {
             const check = setInterval(() => {
                 if (_loadedSections.has(id)) { clearInterval(check); resolve(); }
@@ -161,7 +192,7 @@ function loadSectionScript(id) {
         }
         _loadingSections.add(id);
         const script = document.createElement('script');
-        script.src = `/static/js/sections/${id}.js?v=78`;
+        script.src = `/static/js/sections/${id}.js?v=79`;
         script.onload = () => { _loadedSections.add(id); _loadingSections.delete(id); resolve(); };
         script.onerror = () => { _loadingSections.delete(id); reject(new Error(`Failed to load ${id}.js`)); };
         document.body.appendChild(script);
@@ -173,7 +204,7 @@ function loadSection(id) {
     const btn = document.querySelector(`[data-s="${id}"]`);
     if (btn) btn.classList.add('active');
     const mc = document.getElementById('main-content');
-    mc.innerHTML = `<div class="section active" id="sec-${id}"><div class="loading">Loading…</div></div>`;
+    mc.innerHTML = `<div class="section active" id="sec-${escapeHtml(id)}"><div class="loading">Loading…</div></div>`;
     const el = document.getElementById(`sec-${id}`);
 
     loadSectionScript(id).then(() => {
@@ -222,34 +253,85 @@ function applyTranslations() {
     if(window.lucide) lucide.createIcons();
 }
 
-// ═══ Auth System ═══════════════════════════════════════════
+// ═══ Auth System (with security hardening) ═══════════════════
 let authToken = localStorage.getItem('climate-token') || null;
 let currentUser = null;
 
+function showAuthError(msg) {
+    const el = document.getElementById('auth-error');
+    if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function hideAuthError() {
+    const el = document.getElementById('auth-error');
+    if (el) { el.style.display = 'none'; }
+}
+
 async function doLogin() {
-    const user = document.getElementById('auth-user')?.value;
+    // ─── Security: Check lockout ──────────────────────────
+    const now = Date.now();
+    if (_loginAttempts.lockedUntil > now) {
+        const mins = Math.ceil((_loginAttempts.lockedUntil - now) / 60000);
+        showAuthError(`Too many failed attempts. Try again in ${mins}m.`);
+        return;
+    }
+
+    const user = document.getElementById('auth-user')?.value?.trim();
     const pass = document.getElementById('auth-pass')?.value;
+    hideAuthError();
+
+    if (!user || !pass) {
+        showAuthError('Username and password required');
+        return;
+    }
+
     try {
-        const res = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:user, password:pass}) });
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: pass })
+        });
         const data = await res.json();
+
         if (data.token) {
+            // ─── Security: Validate token before storing ───
+            if (isTokenExpired(data.token)) {
+                showAuthError('Server returned expired token. Try again.');
+                return;
+            }
             authToken = data.token;
             currentUser = data.user;
             localStorage.setItem('climate-token', authToken);
             document.getElementById('auth-modal').style.display = 'none';
-            alert('Welcome, ' + data.user.name + '! Role: ' + data.user.role);
+            _loginAttempts.count = 0;
+            _loginAttempts.lockedUntil = 0;
+            // Re-render with auth context
+            alert('Welcome, ' + escapeHtml(data.user.name) + '! Role: ' + escapeHtml(data.user.role));
         } else {
-            alert('Invalid credentials');
+            // ─── Security: Track failed attempts ───────────
+            _loginAttempts.count++;
+            if (_loginAttempts.count >= MAX_ATTEMPTS) {
+                _loginAttempts.lockedUntil = now + LOCKOUT_MS;
+                _loginAttempts.count = 0;
+                showAuthError('Account locked for 5 minutes due to too many failed attempts.');
+            } else {
+                const remaining = MAX_ATTEMPTS - _loginAttempts.count;
+                showAuthError(`Invalid credentials (${remaining} attempts remaining)`);
+            }
         }
-    } catch(e) { alert('Login error: ' + e.message); }
+    } catch(e) {
+        showAuthError('Login error: ' + e.message);
+    }
 }
 
 function doLogout() {
     authToken = null; currentUser = null;
     localStorage.removeItem('climate-token');
+    // Reload to clear any cached state
+    window.location.reload();
 }
 
-// ═══ District Search ═══════════════════════════════════════
+// ═══ District Search (XSS-safe) ═════════════════════════════
 (function() {
     const searchInput = document.getElementById('district-search');
     const dropdown = document.getElementById('district-search-dropdown');
@@ -262,14 +344,12 @@ function doLogout() {
         debounceTimer = setTimeout(() => handleDistrictSearch(), 200);
     });
 
-    // Close dropdown on click outside
     document.addEventListener('click', function(e) {
         if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.style.display = 'none';
         }
     });
 
-    // Focus the input and show results when focused
     searchInput.addEventListener('focus', function() {
         handleDistrictSearch();
     });
@@ -279,12 +359,10 @@ function doLogout() {
         const navBtns = $$('.nav-btn');
         const navLabels = $$('.nav-section-label');
 
-        // 1) Filter sidebar nav buttons by text match
         navBtns.forEach(btn => {
             const text = btn.textContent.toLowerCase();
             btn.style.display = (!query || text.includes(query)) ? '' : 'none';
         });
-        // Also show/hide section labels based on whether any visible buttons follow them
         navLabels.forEach(label => {
             if (!query) { label.style.display = ''; return; }
             let next = label.nextElementSibling;
@@ -299,7 +377,6 @@ function doLogout() {
             label.style.display = hasVisible ? '' : 'none';
         });
 
-        // 2) When 3+ chars, search weatherData districts
         if (query.length >= 3 && window.weatherData && Object.keys(window.weatherData).length > 0) {
             const matches = [];
             for (const [name, d] of Object.entries(window.weatherData)) {
@@ -312,33 +389,32 @@ function doLogout() {
                 }
             }
             if (matches.length > 0) {
+                // ─── Security: Escape all data before innerHTML ─
                 dropdown.innerHTML = matches.map(d => {
                     const temp = d.temp != null ? Math.round(d.temp) + '°C' : 'N/A';
-                    return `<div class="district-search-item" data-district="${d.name.replace(/"/g, '&quot;')}">
-                        <span class="district-search-name">${d.name}</span>
-                        <span class="district-search-meta">${d.province} · ${temp}</span>
+                    const safeName = escapeHtml(d.name);
+                    const safeProvince = escapeHtml(d.province);
+                    return `<div class="district-search-item" data-district="${escapeHtml(d.name)}">
+                        <span class="district-search-name">${safeName}</span>
+                        <span class="district-search-meta">${safeProvince} · ${temp}</span>
                     </div>`;
                 }).join('');
                 dropdown.style.display = 'block';
 
-                // 3) Click handler — load city-weather filtered to district
                 dropdown.querySelectorAll('.district-search-item').forEach(item => {
                     item.addEventListener('click', () => {
                         const district = item.dataset.district;
                         searchInput.value = district;
                         dropdown.style.display = 'none';
                         loadSection('city-weather');
-                        // Wait for section to load, then trigger district filter
                         setTimeout(() => {
                             const section = document.getElementById('sec-city-weather');
                             if (section) {
-                                // Try common filter patterns
                                 const filterInput = section.querySelector('input[type="text"], select');
                                 if (filterInput && filterInput.tagName === 'INPUT') {
                                     filterInput.value = district;
                                     filterInput.dispatchEvent(new Event('input'));
                                 }
-                                // Also try to set a global filter variable if the section exposes one
                                 if (typeof window.setCityFilter === 'function') {
                                     window.setCityFilter(district);
                                 }

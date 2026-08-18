@@ -26,6 +26,9 @@ def validate_name(name, max_length=50):
 _rate_limit_cache = {}
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX = 60  # requests per window per IP
+AUTH_RATE_LIMIT_MAX = 5  # login attempts per window per IP
+LOGIN_LOCKOUT = {}  # ip -> unlock_time
+LOGIN_LOCKOUT_DURATION = 900  # 15 minutes
 
 def rate_limit(f):
     """Simple in-memory rate limiter"""
@@ -34,17 +37,26 @@ def rate_limit(f):
         ip = request.remote_addr or '0.0.0.0'
         now = time.time()
         key = f"{ip}:{f.__name__}"
-        
+
+        # Check lockout for login
+        if f.__name__ == 'login':
+            if ip in LOGIN_LOCKOUT and now < LOGIN_LOCKOUT[ip]:
+                return jsonify({'error': 'Account locked. Try again later.'}), 429
+
         # Clean old entries
         if key in _rate_limit_cache:
             _rate_limit_cache[key] = [t for t in _rate_limit_cache[key] if now - t < RATE_LIMIT_WINDOW]
         else:
             _rate_limit_cache[key] = []
-        
+
         # Check rate
-        if len(_rate_limit_cache[key]) >= RATE_LIMIT_MAX:
+        limit = AUTH_RATE_LIMIT_MAX if f.__name__ == 'login' else RATE_LIMIT_MAX
+        if len(_rate_limit_cache[key]) >= limit:
+            # Lockout on login brute-force
+            if f.__name__ == 'login':
+                LOGIN_LOCKOUT[ip] = now + LOGIN_LOCKOUT_DURATION
             return jsonify({'error': 'Rate limit exceeded. Try again later.'}), 429
-        
+
         _rate_limit_cache[key].append(now)
         return f(*args, **kwargs)
     return decorated
