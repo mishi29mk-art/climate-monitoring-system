@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data then render default section
     loadAllData().then(() => {
         dataLoaded = true;
+        // Update bell badge after data loads
+        if (typeof updateBellBadge === 'function') updateBellBadge();
         // Load overview section - use loadSection which handles everything
         try {
             loadSection('overview');
