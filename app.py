@@ -455,7 +455,7 @@ def fetch_aqi_job():
 @app.route('/api/modules/ingestion')
 def get_ingestion_status():
     sources = [
-        {'id':'open-meteo-weather','name':'Open-Meteo Weather API','type':'API','status':'active','frequency':'3 hours','last_sync':load_json('_meta_weather.json',{}).get('last_fetch','Never'),'records':load_json('_meta_weather.json',{}).get('districts',0),'icon':'🌦','category':'Weather'},
+        {'id':'open-meteo-weather','name':'Open-Meteo Weather API','type':'API','status':'active','frequency':'3 hours','last_sync':(load_json('_meta_weather.json') or {}).get('last_fetch','Never'),'records':(load_json('_meta_weather.json') or {}).get('districts',0),'icon':'🌦','category':'Weather'},
         {'id':'open-meteo-aqi','name':'Open-Meteo Air Quality API','type':'API','status':'active','frequency':'6 hours','last_sync':time.strftime('%Y-%m-%d %H:%M:%S'),'records':len(load_json('aqi_cache.json') or {}),'icon':'💨','category':'Air Quality'},
         {'id':'open-meteo-rivers','name':'GloFAS River Discharge','type':'API','status':'active','frequency':'3 hours','last_sync':time.strftime('%Y-%m-%d %H:%M:%S'),'records':len((load_json('river_cache.json') or {}).get('stations',[])),'icon':'🌊','category':'Hydrology'},
         {'id':'sentinel-2','name':'Sentinel-2 Satellite','type':'Satellite','status':'simulated','frequency':'5 days','last_sync':'Simulated (cloud cover 35%)','records':56,'icon':'🛰','category':'Satellite'},

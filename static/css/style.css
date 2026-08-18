@@ -448,6 +448,69 @@ a:hover { color: var(--accent-light); }
    ═══════════════════════════════════════════════════════════ */
 .sec-hdr { margin-bottom: 20px; }
 
+/* ═══ Cyberpunk Digital Clock (Every Page) ══════════════════ */
+.cyber-clock {
+    position: fixed;
+    top: 50%;
+    right: 40px;
+    transform: translateY(-50%);
+    z-index: 50;
+    width: 280px;
+    height: 160px;
+    pointer-events: none;
+}
+#matrix-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    opacity: 0.3;
+}
+.cyber-clock-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+.cyber-clock-time {
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 42px;
+    font-weight: 700;
+    color: #ff00ff;
+    letter-spacing: 4px;
+    text-shadow: 0 0 5px #ff00ff,
+                 0 0 10px #ff00ff,
+                 0 0 20px #ff00ff,
+                 0 0 40px #cc00cc,
+                 0 0 80px #990099;
+    line-height: 1;
+}
+.cyber-clock-ampm {
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 14px;
+    color: #cc88ff;
+    letter-spacing: 3px;
+    margin-top: 2px;
+    text-shadow: 0 0 5px #cc88ff, 0 0 10px #9966cc;
+}
+.cyber-clock-date {
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 13px;
+    color: #cc88ff;
+    letter-spacing: 2px;
+    margin-top: 8px;
+    text-shadow: 0 0 5px #cc88ff, 0 0 10px #9966cc;
+}
+@keyframes cyberPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
 /* ═══ Dashboard Live Clock ════════════════════════════════ */
 .hero-top {
     display: flex;
@@ -887,7 +950,7 @@ html.light .progress { background: #e5e5e5; }
 
 /* ═══ Multi-language ═══════════════════════════════════════ */
 .lang-toggle {
-    position: fixed; bottom: 16px; left: 280px; z-index: 300;
+    position: fixed; bottom: 16px; right: 16px; z-index: 300;
     padding: 8px 14px; border-radius: 9999px;
     background: var(--bg-card); border: 1px solid var(--border);
     color: var(--text-primary); font-size: 12px; cursor: pointer;
@@ -1054,7 +1117,7 @@ html.light .dark-popup .leaflet-popup-tip { background: #ffffff; }
    NOTIFICATION BELL & DROPDOWN
    ═══════════════════════════════════════════════════════════ */
 .bell-btn {
-    position: fixed; bottom: 16px; left: 380px; z-index: 300;
+    position: fixed; bottom: 60px; right: 16px; z-index: 300;
     padding: 8px 14px; border-radius: 9999px;
     background: var(--bg-card); border: 1px solid var(--border);
     color: var(--text-primary); font-size: 16px; cursor: pointer;
