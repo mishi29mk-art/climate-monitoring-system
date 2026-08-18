@@ -139,5 +139,6 @@ function render_overview(el) {
     window._renderOverviewBelowFold();
     setTimeout(window._renderOverviewBelowFold, 500);
     setTimeout(window._renderOverviewBelowFold, 1500);
-    render_overview_charts(el);
+    window.addEventListener('scroll', window._renderOverviewBelowFold, {once:true});
+    window.addEventListener('resize', window._renderOverviewBelowFold, {once:true});
 }
