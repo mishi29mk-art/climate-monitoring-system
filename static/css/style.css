@@ -168,15 +168,15 @@ a:hover { color: var(--accent-light); }
 
 /* ═══ Digital Clock (Every Page) ════════════════════════════════ */
 .digital-clock {
-    position: relative;
-    margin: 12px 20px 0 auto;
-    width: fit-content;
+    position: fixed;
+    top: 12px;
+    left: 280px;
     z-index: 50;
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 16px;
-    padding: 12px 24px;
+    padding: 10px 20px;
     background: rgba(10, 12, 30, 0.85);
     border: 1px solid rgba(100, 80, 255, 0.35);
     border-radius: 12px;
@@ -220,7 +220,7 @@ a:hover { color: var(--accent-light); }
     50% { opacity: 0.82; }
 }
 @media(max-width: 768px) {
-    .digital-clock { margin: 8px auto 0; flex-wrap: wrap; justify-content: center; }
+    .digital-clock { left: auto; right: 12px; top: auto; bottom: 80px; flex-wrap: wrap; justify-content: center; }
     .dc-time { font-size: 26px; }
     .dc-date { border-left: none; padding-left: 0; border-top: 1px solid rgba(100,80,255,0.3); padding-top: 6px; }
 }
