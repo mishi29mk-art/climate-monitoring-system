@@ -146,7 +146,7 @@ function render_overview(el) {
     setTimeout(window._renderOverviewBelowFold, 1500);
     window.addEventListener('scroll', window._renderOverviewBelowFold, {once:true});
     window.addEventListener('resize', window._renderOverviewBelowFold, {once:true});
-    console.log("CLOCK DEBUG: Starting clock init"); // Live Dashboard Clock
+    // Live Dashboard Clock
     (function(){
         const el = document.getElementById('dashboard-clock');
         if (!el) return;
