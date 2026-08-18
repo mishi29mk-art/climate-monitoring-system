@@ -102,7 +102,21 @@ a:hover { color: var(--accent-light); }
     z-index: 100;
     transition: transform .3s cubic-bezier(.4,0,.2,1);
     scrollbar-width: thin;
-    scrollbar-color: #363636 transparent;
+    scrollbar-color: #4a4a4a #1a1a1a;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+.sidebar::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 3px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #666;
 }
 
 .sidebar-header {
