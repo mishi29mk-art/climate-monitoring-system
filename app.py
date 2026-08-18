@@ -335,6 +335,8 @@ def generate_alerts():
     for name, data in aqi_cache.items():
         current = data.get('current', {})
         aqi_val = current.get('us_aqi')
+        if not aqi_val:
+            aqi_val = data.get('stats', {}).get('aqi_max')
         if aqi_val:
             if aqi_val >= 200:
                 alerts.append({'type': 'aqi', 'severity': 'extreme', 'district': name, 'province': data.get('province',''), 'value': aqi_val, 'message': f'Severe air pollution: AQI {aqi_val}', 'icon': '💨'})
@@ -399,8 +401,11 @@ def get_summary():
                 wettest = {'district': name, 'rain': tr, 'province': data.get('province','')}
 
     for name, data in aqi.items():
+        # Check current.us_aqi first, then fall back to stats.aqi_max
         current = data.get('current', {})
         aqi_val = current.get('us_aqi')
+        if not aqi_val:
+            aqi_val = data.get('stats', {}).get('aqi_max')
         if aqi_val and aqi_val > worst_aqi['aqi']:
             worst_aqi = {'district': name, 'aqi': aqi_val, 'province': data.get('province','')}
 
