@@ -298,25 +298,23 @@ function doLogout() {
         });
 
         // 2) When 3+ chars, search weatherData districts
-        if (query.length >= 3 && window.weatherData && window.weatherData.districts) {
-            const districts = window.weatherData.districts;
+        if (query.length >= 3 && window.weatherData && Object.keys(window.weatherData).length > 0) {
             const matches = [];
-            for (const d of districts) {
-                const name = (d.district || d.name || '').toLowerCase();
+            for (const [name, d] of Object.entries(window.weatherData)) {
+                if (!d || !d.lat) continue;
                 const province = (d.province || '').toLowerCase();
-                if (name.includes(query) || province.includes(query)) {
-                    matches.push(d);
+                if (name.toLowerCase().includes(query) || province.includes(query)) {
+                    const temp = d.daily?.temperature_2m_max?.[0];
+                    matches.push({ name, province: d.province || '', temp });
                     if (matches.length >= 20) break;
                 }
             }
             if (matches.length > 0) {
                 dropdown.innerHTML = matches.map(d => {
-                    const name = d.district || d.name || 'Unknown';
-                    const province = d.province || '';
-                    const temp = d.temperature != null ? d.temperature + '°C' : 'N/A';
-                    return `<div class="district-search-item" data-district="${name.replace(/"/g, '&quot;')}">
-                        <span class="district-search-name">${name}</span>
-                        <span class="district-search-meta">${province} · ${temp}</span>
+                    const temp = d.temp != null ? Math.round(d.temp) + '°C' : 'N/A';
+                    return `<div class="district-search-item" data-district="${d.name.replace(/"/g, '&quot;')}">
+                        <span class="district-search-name">${d.name}</span>
+                        <span class="district-search-meta">${d.province} · ${temp}</span>
                     </div>`;
                 }).join('');
                 dropdown.style.display = 'block';
