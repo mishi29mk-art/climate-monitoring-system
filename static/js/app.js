@@ -203,7 +203,7 @@ function loadSectionScript(id) {
         }
         _loadingSections.add(id);
         const script = document.createElement('script');
-        script.src = `/static/js/sections/${id}.js?v=2`;
+        script.src = `/static/js/sections/${id}.js?v=3`;
         script.onload = () => { _loadedSections.add(id); _loadingSections.delete(id); resolve(); };
         script.onerror = () => { _loadingSections.delete(id); reject(new Error(`Failed to load ${id}.js`)); };
         document.body.appendChild(script);
