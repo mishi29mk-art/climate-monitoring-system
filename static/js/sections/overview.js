@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Inline Scoped Styles (injected once) ── */
-(function injectOverviewStyles() {
+function injectOverviewStyles() {
     if (document.getElementById('overview-glass-styles')) return;
     const s = document.createElement('style');
     s.id = 'overview-glass-styles';
@@ -289,7 +289,7 @@
     }
     `;
     document.head.appendChild(s);
-})();
+}
 
 /* ═══════════════════════════════════════════════════════════════
    RENDER OVERVIEW — Main entry point
