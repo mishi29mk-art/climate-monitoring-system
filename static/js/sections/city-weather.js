@@ -32,7 +32,7 @@ function render_city_weather(el) {
 
         el.innerHTML = `
         <div style="margin-bottom:16px">
-            <button onclick="loadSection('overview')" style="background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.4);color:#a78bfa;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;position:fixed;top:20px;left:20px;z-index:200;" onmouseover="this.style.background='rgba(167,139,250,0.3)'" onmouseout="this.style.background='rgba(167,139,250,0.2)'">
+            <button onclick="loadSection('overview')" style="background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.4);color:#a78bfa;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:200;" onmouseover="this.style.background='rgba(167,139,250,0.3)'" onmouseout="this.style.background='rgba(167,139,250,0.2)'">
                 ← Back to Overview
             </button>
         </div>
