@@ -1136,6 +1136,150 @@ def get_mapping_layers():
     ]
     return jsonify({'layers':layers,'basemaps':basemaps,'tools':tools,'active_layers':len([l for l in layers if l['status']=='active'])})
 
+# ─── Climate GIS: 10 Major Cities + Province Summaries ─────────────
+MAJOR_CITIES = [
+    {'name':'Karachi','province':'Sindh','lat':24.8607,'lng':67.0011},
+    {'name':'Lahore','province':'Punjab','lat':31.5204,'lng':74.3587},
+    {'name':'Rawalpindi','province':'Punjab','lat':33.5651,'lng':73.0169},
+    {'name':'Peshawar','province':'KPK','lat':34.0151,'lng':71.5249},
+    {'name':'Quetta','province':'Balochistan','lat':30.1798,'lng':66.9750},
+    {'name':'Faisalabad','province':'Punjab','lat':31.4504,'lng':73.1350},
+    {'name':'Multan','province':'Punjab','lat':30.1575,'lng':71.5249},
+    {'name':'Hyderabad','province':'Sindh','lat':25.3960,'lng':68.3578},
+    {'name':'Gilgit','province':'GB','lat':35.8819,'lng':74.4643},
+    {'name':'Sialkot','province':'Punjab','lat':32.4945,'lng':74.5229},
+]
+
+PROVINCES = {
+    'Punjab': {'color':'#22c55e','capital':'Lahore','lat':31.17,'lng':72.70},
+    'Sindh': {'color':'#3b82f6','capital':'Karachi','lat':26.22,'lng':68.37},
+    'KPK': {'color':'#f97316','capital':'Peshawar','lat':34.95,'lng':71.78},
+    'Balochistan': {'color':'#ef4444','capital':'Quetta','lat':28.49,'lng':65.09},
+    'GB': {'color':'#a78bfa','capital':'Gilgit','lat':35.88,'lng':74.46},
+    'AJK': {'color':'#eab308','capital':'Muzaffarabad','lat':34.37,'lng':73.47},
+    'ICT': {'color':'#06b6d4','capital':'Islamabad','lat':33.68,'lng':73.05},
+}
+
+def get_city_weather(city):
+    """Get weather for a single city from cached data."""
+    w = (load_json('weather_cache.json') or {}).get(city['name'], {})
+    a = (load_json('aqi_cache.json') or {})
+    aqi_val = a.get('stats',{}).get('aqi_max', 0)
+    fc = w.get('forecast', {}) or {}
+    daily = fc.get('daily', {}) or {}
+    hourly = fc.get('hourly', {}) or {}
+    temps = daily.get('temperature_2m_max', []) or hourly.get('temperature_2m', []) or []
+    humidity = hourly.get('relative_humidity_2m', []) or []
+    wind = hourly.get('wind_speed_10m', []) or []
+    precipitation = daily.get('precipitation_sum', []) or []
+    current_temp = hourly.get('temperature_2m', [None])[0] if hourly.get('temperature_2m') else (max(temps) if temps else None)
+    current_humidity = humidity[0] if humidity else None
+    current_wind = wind[0] if wind else None
+    rain_7d = sum(precipitation[:7]) if precipitation else 0
+    max_temp = max(temps) if temps else None
+    min_temp = min(daily.get('temperature_2m_min', [99]) or [99]) if daily.get('temperature_2m_min') else None
+    return {
+        'name': city['name'], 'province': city['province'],
+        'lat': city['lat'], 'lng': city['lng'],
+        'temp': current_temp, 'feels_like': current_temp,
+        'humidity': current_humidity, 'wind_speed': current_wind,
+        'aqi': aqi_val, 'rain_7d': round(rain_7d, 1),
+        'max_temp': max_temp, 'min_temp': min_temp if min_temp != 99 else None,
+        'description': generate_city_description(city['name'], current_temp, current_humidity, current_wind, aqi_val),
+    }
+
+def generate_city_description(name, temp, humidity, wind, aqi):
+    """Generate a human-readable climate description for a city."""
+    parts = []
+    if temp is not None:
+        if temp >= 40: parts.append(f"{name} is experiencing extreme heat at {temp}°C")
+        elif temp >= 35: parts.append(f"{name} is very hot at {temp}°C")
+        elif temp >= 30: parts.append(f"{name} is warm at {temp}°C")
+        elif temp >= 25: parts.append(f"{name} has pleasant weather at {temp}°C")
+        elif temp >= 20: parts.append(f"{name} is cool at {temp}°C")
+        else: parts.append(f"{name} is cold at {temp}°C")
+    if humidity is not None:
+        if humidity >= 80: parts.append(f"with very high humidity ({humidity}%)")
+        elif humidity >= 60: parts.append(f"with moderate humidity ({humidity}%)")
+        else: parts.append(f"with low humidity ({humidity}%)")
+    if wind is not None and wind >= 20:
+        parts.append(f"and strong winds at {wind} km/h")
+    if aqi and aqi >= 150:
+        parts.append("Air quality is unhealthy — limit outdoor activities.")
+    elif aqi and aqi >= 100:
+        parts.append("Air quality is moderate — sensitive groups should reduce exposure.")
+    elif aqi and aqi >= 50:
+        parts.append("Air quality is good.")
+    return '. '.join(parts) + '.' if parts else f"Climate data for {name} is being updated."
+
+@app.route('/api/climate-gis/cities')
+def climate_gis_cities():
+    """Return weather data for 10 major cities."""
+    cities = [get_city_weather(c) for c in MAJOR_CITIES]
+    return jsonify({'cities': cities, 'total': len(cities)})
+
+@app.route('/api/climate-gis/provinces')
+def climate_gis_provinces():
+    """Return province-level weather summaries."""
+    weather = load_json('weather_cache.json') or {}
+    aqi_data = load_json('aqi_cache.json') or {}
+    provinces = {}
+    for prov_name, prov_info in PROVINCES.items():
+        # Collect all districts in this province
+        prov_districts = []
+        for d_name, d_data in (weather or {}).items():
+            if isinstance(d_data, dict) and d_data.get('province') == prov_name:
+                fc2 = d_data.get('forecast', {}) or {}
+                hourly = fc2.get('hourly', {}) or {}
+                daily = fc2.get('daily', {}) or {}
+                temps = hourly.get('temperature_2m', []) or daily.get('temperature_2m_max', []) or []
+                humidity = hourly.get('relative_humidity_2m', []) or []
+                wind = hourly.get('wind_speed_10m', []) or []
+                current_temp = temps[0] if temps else None
+                current_humidity = humidity[0] if humidity else None
+                current_wind = wind[0] if wind else None
+                prov_districts.append({
+                    'name': d_name, 'temp': current_temp,
+                    'humidity': current_humidity, 'wind_speed': current_wind,
+                })
+        avg_temp = round(sum(d['temp'] for d in prov_districts if d['temp']) / max(len([d for d in prov_districts if d['temp']]), 1), 1) if prov_districts else None
+        avg_humidity = round(sum(d['humidity'] for d in prov_districts if d['humidity']) / max(len([d for d in prov_districts if d['humidity']]), 1), 1) if prov_districts else None
+        max_temp = max((d['temp'] for d in prov_districts if d['temp']), default=None)
+        min_temp = min((d['temp'] for d in prov_districts if d['temp']), default=None)
+        provinces[prov_name] = {
+            **prov_info, 'district_count': len(prov_districts),
+            'avg_temp': avg_temp, 'avg_humidity': avg_humidity,
+            'max_temp': max_temp, 'min_temp': min_temp,
+        }
+    return jsonify({'provinces': provinces})
+
+@app.route('/api/climate-gis/map-data')
+def climate_gis_map_data():
+    """Return all districts with lat/lng for map rendering."""
+    weather = load_json('weather_cache.json') or {}
+    aqi_data = load_json('aqi_cache.json') or {}
+    districts = []
+    for name, data in (weather or {}).items():
+        if not isinstance(data, dict): continue
+        fc3 = data.get('forecast', {}) or {}
+        hourly = fc3.get('hourly', {}) or {}
+        daily = fc3.get('daily', {}) or {}
+        temps = hourly.get('temperature_2m', []) or daily.get('temperature_2m_max', []) or []
+        humidity = hourly.get('relative_humidity_2m', []) or []
+        wind = hourly.get('wind_speed_10m', []) or []
+        precipitation = daily.get('precipitation_sum', []) or []
+        current_temp = temps[0] if temps else None
+        districts.append({
+            'name': name, 'province': data.get('province',''),
+            'lat': data.get('lat', 0), 'lng': data.get('lng', 0),
+            'temp': current_temp,
+            'humidity': humidity[0] if humidity else None,
+            'wind_speed': wind[0] if wind else None,
+            'rain_7d': round(sum(precipitation[:7]), 1) if precipitation else 0,
+            'aqi': aqi_data.get('stats',{}).get('aqi_max', 0),
+        })
+    return jsonify({'districts': districts, 'total': len(districts)})
+
 # ─── Scheduler ──────────────────────────────────────────────────────
 scheduler = BackgroundScheduler()
 scheduler.add_job(fetch_weather_job, 'interval', hours=3, id='weather', replace_existing=True)
