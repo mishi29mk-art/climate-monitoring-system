@@ -462,6 +462,10 @@ function render_overview(el) {
             </div>
             <div class="card-grid g2">
                 <div class="card ov-glass">
+                    <h3 style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
+                        <i data-lucide="bell" style="width:18px;height:18px;opacity:0.7;color:#ef4444"></i>
+                        Active Alerts (${alerts.length})
+                    </h3>
                     <div class="tbl-scroll" style="max-height:280px">
                         <table class="tbl">
                             <thead><tr><th></th><th>Type</th><th>District</th><th>Severity</th><th>Value</th></tr></thead>

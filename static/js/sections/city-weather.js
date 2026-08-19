@@ -31,6 +31,11 @@ function render_city_weather(el) {
         const spiVal = spi(s.rain_total_7d, 40); // rough normal
 
         el.innerHTML = `
+        <div style="margin-bottom:16px">
+            <button onclick="loadSection('overview')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#f8fafc;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                ← Back to Overview
+            </button>
+        </div>
         <div class="sec-hdr">
             <h2>🏙 ${selectedCity}</h2>
             <p>${d.province || 'Pakistan'} · Pop ${fmtK(d.population)} · ${alerts.length ? `⚠ ${alerts.length} active alerts` : '✅ No active alerts'}</p>
