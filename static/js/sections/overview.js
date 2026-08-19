@@ -654,15 +654,17 @@ function renderTopRankings() {
 
     function getCityWeather(city) {
         const d = weatherData[city.name] || {};
-        const fc = d.forecast || {};
-        const hourly = fc.hourly || {};
-        const temps = hourly.temperature_2m || [];
-        const humidity = hourly.relative_humidity_2m || [];
-        const wind = hourly.wind_speed_10m || [];
-        const currentTemp = temps.length ? Math.round(temps[0]) : null;
-        const currentHumidity = humidity.length ? Math.round(humidity[0]) : null;
-        const currentWind = wind.length ? Math.round(wind[0]) : null;
-        return {temp: currentTemp, humidity: currentHumidity, wind: currentWind};
+        const s = d.stats || {};
+        const aqi = aqiData[city.name];
+        return {
+            tempMax: s.temp_max_7d || null,
+            tempMin: s.temp_min_7d || null,
+            humidity: s.humidity_avg || null,
+            wind: s.wind_max_7d || null,
+            rain: s.rain_total_7d || null,
+            aqi: aqi?.stats?.aqi_max || null,
+            uv: s.uv_max_7d || null
+        };
     }
 
     function getTempColor(temp) {
@@ -672,6 +674,13 @@ function renderTopRankings() {
         if (temp >= 25) return '#22c55e';
         if (temp >= 20) return '#3b82f6';
         return '#06b6d4';
+    }
+
+    function getAqiColor(aqi) {
+        if (aqi > 150) return '#ef4444';
+        if (aqi > 100) return '#f97316';
+        if (aqi > 50) return '#eab308';
+        return '#22c55e';
     }
 
     container.innerHTML = '';
@@ -689,24 +698,33 @@ function renderTopRankings() {
     /* Major Cities Weather Cards */
     const cityCards = majorCities.map(city => {
         const w = getCityWeather(city);
-        const tempColor = getTempColor(w.temp);
-        return '<div class="city-weather-card" style="background:rgba(15,23,42,0.85);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:12px;">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+        const tempColor = getTempColor(w.tempMax);
+        const aqiColor = getAqiColor(w.aqi);
+        const aqiLabel = w.aqi > 150 ? 'Poor' : w.aqi > 100 ? 'Moderate' : w.aqi > 50 ? 'Good' : 'Excellent';
+        return '<div class="city-weather-card" onclick="loadSection(\'city-weather\');setTimeout(()=>setCityFilter(\'' + city.name + '\'),300)" style="background:rgba(15,23,42,0.85);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'rgba(167,139,250,0.3)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.08)\'">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
                 '<div>' +
-                    '<div style="font-size:15px;font-weight:600;color:#f8fafc;">' + city.name + '</div>' +
+                    '<div style="font-size:16px;font-weight:600;color:#f8fafc;">' + city.name + '</div>' +
                     '<div style="font-size:11px;color:#94a3b8;">' + city.province + '</div>' +
                 '</div>' +
-                '<div style="font-size:28px;font-weight:700;color:' + tempColor + ';">' + (w.temp != null ? w.temp + '°' : '--') + '</div>' +
+                '<div style="font-size:32px;font-weight:700;color:' + tempColor + ';">' + (w.tempMax != null ? Math.round(w.tempMax) + '°' : '--') + '</div>' +
             '</div>' +
-            '<div style="display:flex;gap:16px;font-size:12px;color:#94a3b8;">' +
-                '<span>💧 ' + (w.humidity != null ? w.humidity + '%' : '--') + '</span>' +
-                '<span>💨 ' + (w.wind != null ? w.wind + ' km/h' : '--') + '</span>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:#94a3b8;">' +
+                '<span>🌡 Min: ' + (w.tempMin != null ? Math.round(w.tempMin) + '°' : '--') + '</span>' +
+                '<span>💨 Wind: ' + (w.wind != null ? Math.round(w.wind) + ' km/h' : '--') + '</span>' +
+                '<span>💧 Humidity: ' + (w.humidity != null ? Math.round(w.humidity) + '%' : '--') + '</span>' +
+                '<span>🌧 Rain: ' + (w.rain != null ? Math.round(w.rain) + 'mm' : '--') + '</span>' +
+            '</div>' +
+            '<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;font-size:11px;">' +
+                '<span style="color:' + aqiColor + ';">AQI: ' + (w.aqi != null ? Math.round(w.aqi) + ' (' + aqiLabel + ')' : '--') + '</span>' +
+                '<span style="color:#f97316;">UV: ' + (w.uv != null ? Math.round(w.uv * 10) / 10 : '--') + '</span>' +
             '</div>' +
         '</div>';
     }).join('');
 
-    c3.innerHTML = '<div class="card ov-glass" style="max-height:480px;overflow-y:auto;">' +
+    c3.innerHTML = '<div class="card ov-glass" style="max-height:520px;overflow-y:auto;">' +
         '<h3 style="margin-bottom:12px;">🏙 Major Cities Weather</h3>' +
+        '<p style="font-size:12px;color:#94a3b8;margin-bottom:12px;">Click any city for detailed forecast</p>' +
         cityCards +
     '</div>';
 }
