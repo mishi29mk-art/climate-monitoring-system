@@ -172,7 +172,8 @@ a:hover { color: var(--accent); }
 .digital-clock {
     position: fixed;
     top: 12px;
-    left: 280px;
+    right: 20px;
+    left: auto;
     z-index: 50;
     display: flex;
     flex-direction: row;
