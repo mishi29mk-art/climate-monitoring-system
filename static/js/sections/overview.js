@@ -638,11 +638,41 @@ function renderTopRankings() {
         .slice(0,10)
         .map(([n,d])=>({name:n.substring(0,10), value:d.stats?.rain_total_7d||0, display:fmtMm(d.stats?.rain_total_7d)}));
 
-    /* AQI Top 10 */
-    const a10 = Object.entries(aqiData).filter(([,d])=>d.stats)
-        .sort((a,b)=>(b[1].stats?.aqi_max||0)-(a[1].stats?.aqi_max||0))
-        .slice(0,10)
-        .map(([n,d])=>({name:n.substring(0,10), value:d.stats?.aqi_max||0, display:Math.round(d.stats?.aqi_max||0)}));
+    /* Major Cities Weather Updates */
+    const majorCities = [
+        {name:'Karachi', province:'Sindh'},
+        {name:'Lahore', province:'Punjab'},
+        {name:'Islamabad', province:'ICT'},
+        {name:'Faisalabad', province:'Punjab'},
+        {name:'Multan', province:'Punjab'},
+        {name:'Hyderabad', province:'Sindh'},
+        {name:'Rawalpindi', province:'Punjab'},
+        {name:'Peshawar', province:'KPK'},
+        {name:'Quetta', province:'Balochistan'},
+        {name:'Gilgit', province:'GB'}
+    ];
+
+    function getCityWeather(city) {
+        const d = weatherData[city.name] || {};
+        const fc = d.forecast || {};
+        const hourly = fc.hourly || {};
+        const temps = hourly.temperature_2m || [];
+        const humidity = hourly.relative_humidity_2m || [];
+        const wind = hourly.wind_speed_10m || [];
+        const currentTemp = temps.length ? Math.round(temps[0]) : null;
+        const currentHumidity = humidity.length ? Math.round(humidity[0]) : null;
+        const currentWind = wind.length ? Math.round(wind[0]) : null;
+        return {temp: currentTemp, humidity: currentHumidity, wind: currentWind};
+    }
+
+    function getTempColor(temp) {
+        if (temp >= 40) return '#ef4444';
+        if (temp >= 35) return '#f97316';
+        if (temp >= 30) return '#eab308';
+        if (temp >= 25) return '#22c55e';
+        if (temp >= 20) return '#3b82f6';
+        return '#06b6d4';
+    }
 
     container.innerHTML = '';
     const c1 = document.createElement('div');
@@ -651,9 +681,34 @@ function renderTopRankings() {
     container.appendChild(c1);
     container.appendChild(c2);
     container.appendChild(c3);
+
+    /* Temperature & Rainfall Rankings */
     makeRanking(c1, 'Temperature (Top 10)', '🔥', t10, (v,i)=>tempColors[i], '°C');
     makeRanking(c2, 'Rainfall 7-Day (Top 10)', '🌧', r10, (v,i)=>rainColors[i], 'mm');
-    makeRanking(c3, 'AQI (Top 10)', '💨', a10, (v,i)=>aqiColors[i], '');
+
+    /* Major Cities Weather Cards */
+    const cityCards = majorCities.map(city => {
+        const w = getCityWeather(city);
+        const tempColor = getTempColor(w.temp);
+        return '<div class="city-weather-card" style="background:rgba(15,23,42,0.85);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:12px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+                '<div>' +
+                    '<div style="font-size:15px;font-weight:600;color:#f8fafc;">' + city.name + '</div>' +
+                    '<div style="font-size:11px;color:#94a3b8;">' + city.province + '</div>' +
+                '</div>' +
+                '<div style="font-size:28px;font-weight:700;color:' + tempColor + ';">' + (w.temp != null ? w.temp + '°' : '--') + '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:16px;font-size:12px;color:#94a3b8;">' +
+                '<span>💧 ' + (w.humidity != null ? w.humidity + '%' : '--') + '</span>' +
+                '<span>💨 ' + (w.wind != null ? w.wind + ' km/h' : '--') + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    c3.innerHTML = '<div class="card ov-glass" style="max-height:480px;overflow-y:auto;">' +
+        '<h3 style="margin-bottom:12px;">🏙 Major Cities Weather</h3>' +
+        cityCards +
+    '</div>';
 }
 
 /* ═══════════════════════════════════════════════════════════════
