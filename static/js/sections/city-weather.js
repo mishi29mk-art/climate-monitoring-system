@@ -6,7 +6,9 @@ function setCityFilter(city) {
     const section = document.getElementById('sec-city-weather');
     if (section) {
         const sel = document.getElementById('cw-select');
-        if (sel) { sel.value = city; sel.dispatchEvent(new Event('change')); }
+        if (sel) sel.value = city;
+        // Re-render with the new city
+        render_city_weather(section.querySelector('.section-body') || section);
     }
 }
 window.setCityFilter = setCityFilter;
