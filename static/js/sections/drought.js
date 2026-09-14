@@ -3,18 +3,55 @@ function render_drought(el) {
     const w = weatherData || {};
     const entries = Object.entries(w);
 
-    // Compute drought metrics using SPI
+    // District-specific 7-day precipitation normals (mm) for August monsoon
+    // Based on Pakistan Meteorological Department historical averages
+    const NORMALS = {
+        // KPK
+        'Peshawar': 32, 'Nowshera': 35, 'Charsadda': 30, 'Swabi': 28,
+        'D.I. Khan': 18, 'Chitral': 22, 'Dir': 25, 'Kohistan': 40,
+        'Haripur': 30, 'Mardan': 32, 'Bannu': 15, 'Tank': 12,
+        'Waziristan': 18, 'Karak': 14, 'Hangu': 16, 'Kohat': 20,
+        // Punjab
+        'Lahore': 38, 'Rawalpindi': 42, 'Islamabad': 45, 'Faisalabad': 30,
+        'Multan': 20, 'Bahawalpur': 18, 'Sargodha': 28, 'Gujranwala': 35,
+        'Sialkot': 38, 'Jhang': 22, 'Sahiwal': 26, 'D.G. Khan': 20,
+        'Muzaffargarh': 18, 'Rahim Yar Khan': 15, 'Bhakkar': 12,
+        'Chakwal': 25, 'Attock': 28, 'Jhelum': 32, 'Chiniot': 25,
+        'Kasur': 35, 'Okara': 28, 'Pakpattan': 30, 'Khanewal': 22,
+        'Vehari': 24, 'Toba Tek Singh': 26, 'Lodhran': 18, 'Nankana Sahib': 28,
+        'Sheikhupura': 32, 'Hafizabad': 30, 'Mandi Bahauddin': 32,
+        'Chowk Munda': 15, 'Layyah': 16,
+        // Sindh
+        'Karachi': 12, 'Hyderabad': 10, 'Sukkur': 8, 'Larkana': 10,
+        'Nawabshah': 8, 'Jacobabad': 7, 'Khairpur': 8, 'Thatta': 10,
+        'Badin': 12, 'Mirpur Khas': 10, 'Dadu': 8, 'Ghotki': 7,
+        'Sanghar': 9, 'Naushahro Feroze': 8, 'Shahdadkot': 9,
+        'Qambar': 8, 'Jamshoro': 10, 'Tando Muhammad Khan': 9,
+        'Matiari': 9, 'Sujawal': 11,
+        // Balochistan
+        'Quetta': 8, 'Gwadar': 3, 'Turbat': 5, 'Khuzdar': 6,
+        'Zhob': 10, 'Sibi': 7, 'Naseerabad': 6, 'Lasbela': 5,
+        'Kalat': 5, 'Makran': 4, 'Panjgur': 3, 'Chagai': 2,
+        'Kharan': 2, 'Awaran': 4, 'Kech': 4, 'Dera Bugti': 5,
+        'Jaffarabad': 6, 'Barkhan': 8, 'Loralai': 7, 'Mastung': 5,
+        // GB
+        'Gilgit': 20, 'Skardu': 15, 'Hunza': 18, 'Nagar': 16,
+        'Ghanche': 12, 'Shigar': 10, 'Astore': 22, 'Diamer': 18,
+    };
+    const DEFAULT_NORMAL = 20; // fallback for unmapped districts
+
+    // Compute drought metrics using SPI with district-specific normals
     const droughtData = entries.map(([n, d]) => {
         const rain = d.stats?.rain_total_7d || 0;
         const temp = d.stats?.temp_max_7d || 0;
-        const normal = 25; // approximate 7-day normal for Pakistan
+        const normal = NORMALS[n] || DEFAULT_NORMAL;
         const spiVal = spi(rain, normal);
         let severity = 'Normal';
         if (spiVal < -2) severity = 'Extreme';
         else if (spiVal < -1.5) severity = 'Severe';
         else if (spiVal < -1) severity = 'Moderate';
         else if (spiVal < 0) severity = 'Mild';
-        return { name: n, province: d.province, rain, temp, spi: spiVal, severity, stats: d.stats };
+        return { name: n, province: d.province, rain, temp, spi: spiVal, severity, stats: d.stats, normal };
     });
 
     const sorted = droughtData.sort((a, b) => a.spi - b.spi);

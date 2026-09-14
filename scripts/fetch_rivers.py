@@ -26,7 +26,17 @@ STATIONS = [
     {"name": "Thein Dam", "river": "Ravi", "lat": 32.20, "lng": 74.88, "capacity": 150000},
 ]
 
-def fetch_station(s):
+def load_previous_flows():
+    """Load previous river cache to compare flows for trend calculation"""
+    try:
+        with open(CACHE_FILE) as f:
+            prev = json.load(f)
+        # Build lookup: station name -> discharge
+        return {s['name']: s.get('discharge', 0) for s in prev.get('stations', [])}
+    except:
+        return {}
+
+def fetch_station(s, prev_flows):
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": s['lat'], "longitude": s['lng'],
@@ -43,25 +53,57 @@ def fetch_station(s):
         flow = min(base + total_p * 1500, s['capacity'] * 1.2)
         ratio = flow / s['capacity']
         cat = "Extreme" if ratio >= 0.9 else "Very High" if ratio >= 0.75 else "High" if ratio >= 0.6 else "Moderate" if ratio >= 0.4 else "Low" if ratio >= 0.25 else "Normal"
-        trend = "rising" if total_p > 20 else "stable" if total_p > 5 else "falling"
+
+        # Calculate trend by comparing to previous reading
+        prev_flow = prev_flows.get(s['name'], flow)
+        if prev_flow > 0:
+            change_pct = ((flow - prev_flow) / prev_flow) * 100
+            if change_pct > 10:
+                trend = "rising"
+            elif change_pct < -10:
+                trend = "falling"
+            else:
+                trend = "stable"
+        else:
+            # First run or no previous data - use daily flow pattern
+            today_flow = int(base + (precip[0] or 0) * 1500)
+            avg_3day = sum(int(base + (p or 0) * 1500) for p in precip[:3]) / 3
+            if today_flow > avg_3day * 1.1:
+                trend = "rising"
+            elif today_flow < avg_3day * 0.9:
+                trend = "falling"
+            else:
+                trend = "stable"
+
         return {"discharge": int(flow), "category": cat, "trend": trend, "precip_7d": round(total_p, 1),
                 "daily_precip": precip, "daily_flow": [int(base + p * 1500) for p in precip]}
     except Exception as e:
         return {"discharge": int(s['capacity'] * 0.3), "category": "Normal", "trend": "stable", "error": str(e)}
 
 def main():
+    prev_flows = load_previous_flows()
     results = {"stations": [], "fetched_at": time.strftime("%Y-%m-%d %H:%M:%S")}
     for i, s in enumerate(STATIONS):
         print(f"[{i+1}/{len(STATIONS)}] {s['name']}...", end=' ', flush=True)
-        f = fetch_station(s)
+        f = fetch_station(s, prev_flows)
         results["stations"].append({**s, **f})
-        print(f"{f['discharge']//1000}k cusecs ({f['category']})")
+        print(f"{f['discharge']//1000}k cusecs ({f['category']}, {f['trend']})")
         time.sleep(0.3)
     with open(CACHE_FILE, 'w') as f:
         json.dump(results, f)
     # Update meta file
+    now = time.strftime("%Y-%m-%d %H:%M:%S")
     with open(META_FILE, 'w') as f:
-        json.dump({"last_fetch": time.strftime("%Y-%m-%d %H:%M:%S"), "stations": len(results['stations']), "type": "rivers"}, f)
+        json.dump({"last_fetch": now, "stations": len(results['stations']), "type": "rivers"}, f)
+    # Update unified meta
+    try:
+        meta_path = os.path.join(DATA, '_meta.json')
+        with open(meta_path) as f:
+            meta = json.load(f)
+        meta["sources"]["rivers"] = now
+        with open(meta_path, 'w') as f:
+            json.dump(meta, f)
+    except: pass
     print(f"\nDone. {len(results['stations'])} stations cached.")
 
 if __name__ == '__main__':
