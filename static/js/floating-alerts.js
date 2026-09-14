@@ -10,16 +10,16 @@ function showFloatingAlerts() {
     
     container.innerHTML = '';
     
-    const critical = alertsData.filter(a => 
-        a.severity === 'severe' || a.severity === 'high' || a.severity === 'critical'
-    );
-    if (!critical.length) return;
+    // Get the latest/most severe alerts
+    const alerts = alertsData.slice(0, 3);
+    if (!alerts.length) return;
     
-    critical.slice(0, 5).forEach((a, i) => {
+    alerts.forEach((a, i) => {
         const sev = (a.severity || 'moderate').toLowerCase();
-        const icon = a.icon || (sev === 'severe' ? '🔴' : sev === 'high' ? '🟠' : '🟡');
+        const icon = a.icon || (sev === 'extreme' ? '🔴' : sev === 'severe' ? '🟠' : '🟡');
         const title = (a.type || 'Alert').replace(/_/g, ' ').toUpperCase();
         const msg = (a.district || '') + (a.value != null ? ' — ' + a.value : '');
+        const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         
         const el = document.createElement('div');
         el.className = 'alert-toast-item';
@@ -29,10 +29,12 @@ function showFloatingAlerts() {
                 '<div class="alert-toast-title ' + sev + '">' + title + '</div>' +
                 '<div class="alert-toast-msg">' + msg + '</div>' +
             '</div>' +
+            '<span class="alert-toast-time">' + timeStr + '</span>' +
             '<button class="alert-toast-close" onclick="dismissAlertToast(this)" title="Dismiss">×</button>';
         container.appendChild(el);
     });
     
+    // Auto-dismiss after 30 seconds (gives user time to read)
     _alertToastTimer = setTimeout(function() {
         _alertToastTimer = null;
         if (!container) return;
@@ -43,7 +45,7 @@ function showFloatingAlerts() {
                 setTimeout(function() { item.remove(); }, 350);
             }, idx * 200);
         });
-    }, 20000);
+    }, 30000);
 }
 
 function dismissAlertToast(btn) {

@@ -210,11 +210,11 @@ async function render_mapping_viz(el) {
                 console.warn('Map preview init failed:', e);
             }
 
+            const fallbackColors = [C.success, C.info, C.warning, C.purple, C.orange, C.cyan, C.danger, C.yellow];
             // Bar chart of data points per layer
             const pc = document.getElementById('map-pts-chart');
             if (pc) {
-                const chartColors = layers.map(l =>
-                    layerColors[l.id] || [C.success, C.info, C.warning, C.purple, C.orange, C.cyan, C.danger, C.yellow][layers.indexOf(l) % 8]
+                const chartColors = layers.map((l, i) => fallbackColors[i % 8]);
                 );
                 makeBar(
                     pc.getContext('2d'),

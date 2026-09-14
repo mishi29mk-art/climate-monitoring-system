@@ -136,6 +136,7 @@ function injectOverviewStyles() {
         width: 160px; height: 160px;
         border-radius: 50%;
         background: conic-gradient(
+            from -135deg,
             #22c55e 0deg 90deg,
             #eab308 90deg 180deg,
             #f97316 180deg 270deg,

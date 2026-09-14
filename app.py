@@ -81,6 +81,7 @@ def add_security_headers(response):
         "form-action 'self'"
     )
     response.headers['Content-Security-Policy'] = csp
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
 # ─── Helpers ────────────────────────────────────────────────────────
@@ -218,7 +219,7 @@ _optimized_aqi_cache = None
 _optimized_aqi_time = 0
 
 def get_optimized_aqi():
-    """Return lightweight AQI data (current only, no hourly data)"""
+    """Return lightweight AQI data with last non-null current values"""
     global _optimized_aqi_cache, _optimized_aqi_time
     
     # Return cached if fresh (5 min)
@@ -229,21 +230,27 @@ def get_optimized_aqi():
     if not d:
         return None
     
+    def last_non_null(arr):
+        """Get last non-null value from array"""
+        for v in reversed(arr or []):
+            if v is not None:
+                return v
+        return None
+    
     optimized = {}
     for district, info in d.items():
         hourly = info.get('hourly', {})
         stats = info.get('stats', {})
         
-        # Extract only current AQI and stats
         optimized[district] = {
             'province': info.get('province'),
             'lat': info.get('lat'),
             'lng': info.get('lng'),
             'current': {
-                'us_aqi': hourly.get('us_aqi', [None])[-1] if hourly.get('us_aqi') else None,
-                'pm2_5': hourly.get('pm2_5', [None])[-1] if hourly.get('pm2_5') else None,
-                'pm10': hourly.get('pm10', [None])[-1] if hourly.get('pm10') else None,
-                'ozone': hourly.get('ozone', [None])[-1] if hourly.get('ozone') else None,
+                'us_aqi': last_non_null(hourly.get('us_aqi')),
+                'pm2_5': last_non_null(hourly.get('pm2_5')),
+                'pm10': last_non_null(hourly.get('pm10')),
+                'ozone': last_non_null(hourly.get('ozone')),
             },
             'stats': stats
         }

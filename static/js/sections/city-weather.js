@@ -1,19 +1,22 @@
 /* ─── City Weather — Single City Detail View ────────────────── */
 let cwSelectedCity = '';
+// Pending city set by onclick BEFORE loadSection — used on first render
+window._pendingCityFilter = null;
 
 function setCityFilter(city) {
     cwSelectedCity = city;
     const section = document.getElementById('sec-city-weather');
-    if (section) {
+    if (section && document.getElementById('cw-select')) {
         const sel = document.getElementById('cw-select');
-        if (sel) sel.value = city;
-        // Re-render with the new city
+        sel.value = city;
         render_city_weather(section.querySelector('.section-body') || section);
     }
 }
 window.setCityFilter = setCityFilter;
 
 function render_city_weather(el) {
+    // Consume pending city from onclick handler (set before loadSection)
+    if (window._pendingCityFilter) { cwSelectedCity = window._pendingCityFilter; window._pendingCityFilter = null; }
     let selectedCity = cwSelectedCity || Object.keys(weatherData).find(n => n === 'Karachi') || Object.keys(weatherData)[0] || '';
 
     function render() {

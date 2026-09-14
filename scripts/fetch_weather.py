@@ -77,9 +77,20 @@ def main():
         json.dump(results, f)
 
     # Update metadata
-    meta = {"last_fetch": time.strftime("%Y-%m-%d %H:%M:%S"), "districts": len(results), "type": "weather"}
+    now = time.strftime("%Y-%m-%d %H:%M:%S")
+    meta = {"last_fetch": now, "districts": len(results), "type": "weather"}
     with open(os.path.join(DATA, '_meta_weather.json'), 'w') as f:
         json.dump(meta, f)
+    # Also update unified meta
+    unified = {"last_fetch": now, "sources": {"weather": now}}
+    try:
+        with open(os.path.join(DATA, '_meta.json')) as f:
+            unified = json.load(f)
+        unified["last_fetch"] = now
+        unified["sources"]["weather"] = now
+    except: pass
+    with open(os.path.join(DATA, '_meta.json'), 'w') as f:
+        json.dump(unified, f)
 
     print(f"\nDone. {len(results)}/{total} districts cached.")
 

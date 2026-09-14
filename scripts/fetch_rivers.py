@@ -5,6 +5,7 @@ import requests, json, time, os
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(BASE, 'data')
 CACHE_FILE = os.path.join(DATA, 'river_cache.json')
+META_FILE = os.path.join(DATA, '_meta_river.json')
 
 STATIONS = [
     {"name": "Tarbela Dam", "river": "Indus", "lat": 34.09, "lng": 72.68, "capacity": 550000},
@@ -29,7 +30,7 @@ def fetch_station(s):
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": s['lat'], "longitude": s['lng'],
-        "daily": "precipitation_sum,soil_moisture_0_to_7cm",
+        "daily": "precipitation_sum",
         "timezone": "Asia/Karachi", "forecast_days": 7
     }
     try:
@@ -37,16 +38,16 @@ def fetch_station(s):
         r.raise_for_status()
         data = r.json().get('daily', {})
         precip = data.get('precipitation_sum', [0]) or [0]
-        total_p = sum(v for v in precip if v)
+        total_p = sum(v for v in precip if v is not None)
         base = s['capacity'] * 0.4
         flow = min(base + total_p * 1500, s['capacity'] * 1.2)
         ratio = flow / s['capacity']
         cat = "Extreme" if ratio >= 0.9 else "Very High" if ratio >= 0.75 else "High" if ratio >= 0.6 else "Moderate" if ratio >= 0.4 else "Low" if ratio >= 0.25 else "Normal"
         trend = "rising" if total_p > 20 else "stable" if total_p > 5 else "falling"
-        return {"discharge": int(flow), "category": cat, "trend": trend, "precip_7d": round(total_p,1),
+        return {"discharge": int(flow), "category": cat, "trend": trend, "precip_7d": round(total_p, 1),
                 "daily_precip": precip, "daily_flow": [int(base + p * 1500) for p in precip]}
     except Exception as e:
-        return {"discharge": int(s['capacity']*0.3), "category": "Normal", "trend": "stable", "error": str(e)}
+        return {"discharge": int(s['capacity'] * 0.3), "category": "Normal", "trend": "stable", "error": str(e)}
 
 def main():
     results = {"stations": [], "fetched_at": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -58,6 +59,9 @@ def main():
         time.sleep(0.3)
     with open(CACHE_FILE, 'w') as f:
         json.dump(results, f)
+    # Update meta file
+    with open(META_FILE, 'w') as f:
+        json.dump({"last_fetch": time.strftime("%Y-%m-%d %H:%M:%S"), "stations": len(results['stations']), "type": "rivers"}, f)
     print(f"\nDone. {len(results['stations'])} stations cached.")
 
 if __name__ == '__main__':

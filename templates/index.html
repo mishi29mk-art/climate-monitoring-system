@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time climate monitoring dashboard for Pakistan — temperature, rainfall, AQI, flood alerts, river discharge, and district-level analytics across all provinces.">
     <title>🌍 Climate Monitor — Pakistan</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/static/css/style.css?v=8">
+    <link rel="stylesheet" href="/static/css/style.css?v=9">
 </head>
 <body>
+<h1 class="sr-only">Climate Monitor — Pakistan: Real-time Climate Monitoring Dashboard</h1>
 <a href="#main-content" class="skip-link" style="position:absolute;top:-100px;left:0;background:var(--accent);color:#000;padding:8px 16px;z-index:9999;border-radius:0 0 8px 0;font-size:14px;text-decoration:none" onfocus="this.style.top='0'" onblur="this.style.top='-100px'">Skip to main content</a>
 <nav class="sidebar" id="sidebar" aria-label="Main navigation">
     <div class="sidebar-header">
@@ -40,7 +43,7 @@
         <button class="nav-btn" data-s="flood-risk" data-i18n="Flood Risk" data-i18n-en="⚠Flood Risk"><span class="nav-icon"><i data-lucide="alert-triangle"></i></span>Flood Risk</button>
         <button class="nav-btn" data-s="disaster" data-i18n="Disaster Center" data-i18n-en="🌋Disaster Center"><span class="nav-icon"><i data-lucide="flame"></i></span>Disaster Center</button>
         <div class="nav-section-label">Analysis</div>
-        <button class="nav-btn" data-s="climate-trends" data-i18n="Climate Trends" data-i18n-en="📈Climate Trends"><span class="nav-icon"><i data-lucide="trending-up"></i></span>Climate Trends</button>
+        <button class="nav-btn" data-s="climate-trends" data-i18n="24h City Forecast" data-i18n-en="⏰24h City Forecast"><span class="nav-icon"><i data-lucide="clock"></i></span>24h City Forecast</parameter>
         <button class="nav-btn" data-s="compare" data-i18n="Compare Districts" data-i18n-en="⚖Compare Districts"><span class="nav-icon"><i data-lucide="scale"></i></span>Compare Districts</button>
         <button class="nav-btn" data-s="satellite" data-i18n="Satellite Watch" data-i18n-en="🛰Satellite Watch"><span class="nav-icon"><i data-lucide="satellite"></i></span>Satellite Watch</button>
         <button class="nav-btn" data-s="agriculture" data-i18n="Agriculture" data-i18n-en="🌾Agriculture"><span class="nav-icon"><i data-lucide="sprout"></i></span>Agriculture</button>
@@ -85,7 +88,7 @@
     <div class="section active" id="sec-overview"><div class="loading">Loading Climate Monitor…</div></div>
 </div>
 
-<div id="alert-toast" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px"></div>
+<div id="alert-toast" class="alert-toast-float"></div>
 
 <!-- Mobile Menu Button -->
 <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle mobile menu" aria-expanded="false" aria-controls="sidebar"><i data-lucide="menu"></i></button>
@@ -126,6 +129,7 @@
 <script src="/static/js/maps.js?v=2"></script>
 <script src="/static/js/charts.js?v=2"></script>
 <script src="/static/js/app.js?v=7"></script>
+<script src="/static/js/floating-alerts.js?v=1"></script>
 <script src="/static/js/sections/alert-settings.js?v=2"></script>
 <script>
 // Prevent alert-settings.js from being loaded again by loadSectionScript
